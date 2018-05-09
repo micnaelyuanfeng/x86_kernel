@@ -18,3 +18,5 @@ C code = gcc -c -Wall - m32/64 file.c -o file.o
 
 After all these, there are separated objects for linking and linking command is
 ld -T linker.ld -m elf_i386/(others) object_files -o boot.bin
+
+add byte ptr ds:[bx + si]   disassembe al ; 0000
