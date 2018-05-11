@@ -20,3 +20,6 @@ After all these, there are separated objects for linking and linking command is
 ld -T linker.ld -m elf_i386/(others) object_files -o boot.bin
 
 9000: 03fe (.ctxt) add byte ptr ds:[bx + si], al ; 0000
+
+
+https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/4/html/Using_ld_the_GNU_Linker/assignments.html
