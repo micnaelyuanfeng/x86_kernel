@@ -1,0 +1,14 @@
+nasm -f elf hello.S(asm) -o hello.o
+The output is elf formt output file
+sections and entry point
+
+C calls functions in ASM file
+functions need to declared as global in ASM
+functions need a declaration in C
+
+ASM calls functions in C
+function need an extern func_name in ASM
+call func_name in ASM
+
+ELF = Executable and Linkable Format
+ELF header + Program header table + Sections + section header table
