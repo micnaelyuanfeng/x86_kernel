@@ -1,9 +1,9 @@
 OUTPUT_FORMAT(binary)
-ENTRY(_start)
+ENTRY(kstart)
 
 MEMORY 
 {
-    boot_region (RX) : ORIGIN = 0x7c00, LENGTH = 512
+    boot_region (RX) : ORIGIN = 0x00, LENGTH = 2M
 }
 
 SECTIONS 
@@ -12,17 +12,12 @@ SECTIONS
      {
         *(.s16)
 
-        . = 64;
-        
-        *(.*data*)
-
-        . = 128;
-
         *(.s32)
         
-        . = 510;
-        
-         SHORT(0xaa55)
+        *(.text)
+
+        *(.*data*)
+
      } >boot_region
 
      /DISCARD/ : 
