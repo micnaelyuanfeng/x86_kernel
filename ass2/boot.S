@@ -1,37 +1,56 @@
-%define CODE_SELECTOR  0x8
-%define DATA_SELECTOR  0x10
-%define CURSOR_POS     ((80 * 11 + 0) * 2)
+%define SelectorCode32	1 << 3
+%define SelectorData32  2 << 3
+%define SelectorVideo   3 << 3
 
-[SECTION .loader_section]
+[SECTION .s16]
 [BITS 16]
-	global loader_start
+
+	extern gdt_init
 
 	extern gdtr
 
-loader_start:
+	GLOBAL kstart
+kstart:
+	mov ax, cs
+	mov ds, ax
+	mov es, ax
+	mov gs, ax
+	mov ss, ax
+	mov sp, 0x100
+
+	call gdt_init
+
 	lgdt [gdtr]
 
-	;enable A20 Address line
+	cli 
+
 	in  al, 0x92
-	or  al, 0b10
+	or  al, 0b010
 	out 0x92, al
 
-	;set PE bit of CR0
-	mov  eax, cr0
-	or   eax, 0x01
-	mov  cr0, eax
+	mov eax, cr0
+	or  eax, 0x1
+	mov cr0, eax
 
-	jmp dword CODE_SELECTOR:0
+	jmp	dword SelectorCode32:0
 
-[SECTION .protected_mode_start]
-[BITS 32]
-	mov ax, DATA_SELECTOR
-	mov gs, ax
+[SECTION .s32]
+	global Display_Msg
+Display_Msg:
+	mov ax,  SelectorData
+	mov ds,  ax
+	mov ax,  SelectorVideo
+	mov gs,  ax
 
-	mov edi, CURSOR_POS
-	mov ah, 0x0c
-	mov al, 'P'
-	mov [gs:edi], ax
+	;mov ah,  0x0c
+	;xor esi, esi
+	;xor edi, edi
+	;mov esi, PMMsgLength
+	;mov edi, (80 * 10 + 0) * 2
 
-	int 0x13
+	mov	edi, (80 * 12 + 0) * 2	
+	mov	ah, 0x0c			
+	mov	al, 'L'
+	mov	[gs:edi], ax
+
 	jmp $
