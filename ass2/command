@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+nasm boot.S -o boot.bin
+
+dd command writes boot.bin to a.img
+
+gcc -c -m32 gdt.c -o gdt.o
+
+nasm -f elf/elf32 loader.S -o loader.o
+
+ld -T linker.ld -m elf_i386 gdt.o loader.o -o loader.bin
+
+bochs -f bochsrc
