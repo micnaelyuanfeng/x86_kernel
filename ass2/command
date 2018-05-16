@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 nasm boot.S -o boot.bin
 
 dd command writes boot.bin to a.img
