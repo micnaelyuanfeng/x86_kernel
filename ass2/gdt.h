@@ -1,6 +1,6 @@
 #ifndef _GDT_H_
 #define _GDT_H_
-#include "stdint.h"
+//#include "stdint.h"
 // Type field
 #define TYPE_DATA_RO            0
 #define TYPE_DATA_RO_A          1

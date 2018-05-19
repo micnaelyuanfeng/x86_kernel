@@ -1,27 +1,22 @@
-OUTPUT_FORMAT(binary)
-ENTRY(kstart)
+
+ENTRY(loader_start)
 
 MEMORY 
 {
-    boot_region (RX) : ORIGIN = 0x00, LENGTH = 2M
+    boot_region (RX) : ORIGIN = 0x00, LENGTH = 1024
 }
 
 SECTIONS 
 {
      .text : 
      {
-        *(.s16)
-
-        *(.s32)
+        *(.START16)
         
+        *(.data)
+
+        *(.START32)
         *(.text)
 
-        *(.*data*)
-
-     } >boot_region
-
-     /DISCARD/ : 
-     {
-           *(*)
+        
      }
 }
