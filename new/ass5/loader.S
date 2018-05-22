@@ -22,7 +22,6 @@ LABEL_BEGIN:
 	mov dx, 0x0184F
 	int 0x10
 
-
 	xor	eax, eax
 	mov	ax, cs
 	shl	eax, 4
@@ -31,6 +30,24 @@ LABEL_BEGIN:
 	shr	eax, 16
 	mov	byte [GDT_CODE + 4], al
 	mov	byte [GDT_CODE + 7], ah
+
+	xor	eax, eax
+	mov	ax, cs
+	shl	eax, 4
+	add	eax, PM_START_TEST
+	mov	word [GDT_CODE_TEST + 2], ax
+	shr	eax, 16
+	mov	byte [GDT_CODE_TEST + 4], al
+	mov	byte [GDT_CODE_TEST + 7], ah
+
+	xor	eax, eax
+	mov	ax, cs
+	shl	eax, 4
+	add	eax, CODE_RING3_START
+	mov	word [GDT_CODE_RING3 + 2], ax
+	shr	eax, 16
+	mov	byte [GDT_CODE_RING3 + 4], al
+	mov	byte [GDT_CODE_RING3 + 7], ah
 
 	xor	eax, eax
 	mov	ax, ds
@@ -69,19 +86,17 @@ LABEL_BEGIN:
 PM_START:
 	mov	ax, selectorData
 	mov	ds, ax			
-	;mov es, ax
-	;call DISPLAY_MESSAGE
+
 	mov ax, selectorVideo
 	mov gs, ax
 
 	mov esp, TopOfStack
-	;call DISPLAY_MESSAGE
 
-	mov	ah,  0x0C			; 0000: 黑底    1100: 红字
+	mov	ah,  0x0C			
 	xor	esi, esi
 	xor	edi, edi
-	mov	esi, offsetMsg1	; 源数据偏移
-	mov	edi, (80 * 0 + 0) * 2	; 目的数据偏移。屏幕第 10 行, 第 0 列。
+	mov	esi, offsetMsg1	
+	mov	edi, (80 * 0 + 0) * 2	
 	cld
 .1:
 	lodsb
@@ -91,38 +106,82 @@ PM_START:
 	add	edi, 2
 	jmp	.1
 .2:
+	call selectorCallGate:0
+
 	jmp $
 
 PM_START_TEST:
 	mov ax, selectorVideo
 	mov gs, ax
 
-	mov edi, (80 * 12 + 0) * 2
 	mov ah, 0x0C
-	mov al, 'C'
-	mov 
+	xor esi, esi
+	xor edi, edi
 
+	mov esi, offsetMsg2
+	mov edi, (80 * 1 + 0) * 2
 
-SegCode32Len	equ	$ - PM_START
+.1:
+	lodsb
+	test al, al
+	jz	.2
+	mov	[gs:edi], ax
+	add	edi, 2
+	jmp	.1
+.2:
+
+	retf
+	;jmp $
+SegCode32LenTest	equ $ - PM_START_TEST
+SegCode32Len		equ	$ - PM_START
+
+[SECTION .code_ring3]
+ALIGN 32
+[BITS 32]
+CODE_RING3_START:
+	mov ax, selectorVideo
+	mov gs, ax
+
+	mov ah, 0x0C
+	xor esi, esi
+	xor edi, edi
+
+	mov esi, offsetMsg3
+	mov edi, (80 * 1 + 0) * 2
+
+.1:
+	lodsb
+	test al, al
+	jz	.2
+	mov	[gs:edi], ax
+	add	edi, 2
+	jmp	.1
+.2:
+	retf
+
+SegCodeRing3Len 	equ $ - CODE_RING3_START
 
 [SECTION .stack_region]
 ALIGN 32
 [BITS 32]
+
 STACK_START:
 	times	512		db	0
-TopOfStack	equ	$ - STACK_START - 1
+TopOfStack			equ	$ - STACK_START - 1
 
 [SECTION .data]
 ALIGN 32
 [BITS 32]
+
 DATA_START:
+
 Message1                db  "In Protect Mode", 0
 Message2				db  "Ring 0", 0
 Message3				db  "Ring 3", 0
-;Message4				db  "In Ring 0"
-;Message5                db  "In Ring 3"
+
 offsetMsg1				equ Message1 - $$
 offsetMsg2				equ Message2 - $$
 offsetMsg3				equ Message3 - $$
+
 SegData32Len		    equ	$ - DATA_START
 
