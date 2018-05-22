@@ -1,4 +1,3 @@
-
 BaseOfStack			equ		0x100
 
 org	0100h
@@ -48,6 +47,33 @@ LABEL_BEGIN:
 	shr	eax, 16
 	mov	byte [GDT_CODE_RING3 + 4], al
 	mov	byte [GDT_CODE_RING3 + 7], ah
+
+	xor	eax, eax
+	mov	ax, cs
+	shl	eax, 4
+	add	eax, STACK_START
+	mov	word [GDT_KSTACK+ 2], ax
+	shr	eax, 16
+	mov	byte [GDT_KSTACK + 4], al
+	mov	byte [GDT_KSTACK + 7], ah
+
+	xor	eax, eax
+	mov	ax, cs
+	shl	eax, 4
+	add	eax, STACK_RING3_START
+	mov	word [GDT_STACKRING3 + 2], ax
+	shr	eax, 16
+	mov	byte [GDT_STACKRING3 + 4], al
+	mov	byte [GDT_STACKRING3 + 7], ah
+
+	xor	eax, eax
+	mov	ax, cs
+	shl	eax, 4
+	add	eax, TSS_START
+	mov	word [GDT_TSS + 2], ax
+	shr	eax, 16
+	mov	byte [GDT_TSS + 4], al
+	mov	byte [GDT_TSS + 7], ah
 
 	xor	eax, eax
 	mov	ax, ds
@@ -106,7 +132,17 @@ PM_START:
 	add	edi, 2
 	jmp	.1
 .2:
-	call selectorCallGate:0
+	;call selectorCallGate:0
+
+	mov ax, selectorTSS	
+	ltr ax
+
+	push selectorStackRing3
+	push TopOfStackRing3
+	push selectorCodeRing3
+	push 0
+
+	retf
 
 	jmp $
 
@@ -115,11 +151,13 @@ PM_START_TEST:
 	mov gs, ax
 
 	mov ah, 0x0C
+	;mov al, 'C'
 	xor esi, esi
 	xor edi, edi
 
 	mov esi, offsetMsg2
 	mov edi, (80 * 1 + 0) * 2
+	;mov [gs:edi], ax
 
 .1:
 	lodsb
@@ -130,8 +168,7 @@ PM_START_TEST:
 	jmp	.1
 .2:
 
-	retf
-	;jmp $
+	jmp $
 SegCode32LenTest	equ $ - PM_START_TEST
 SegCode32Len		equ	$ - PM_START
 
@@ -142,22 +179,31 @@ CODE_RING3_START:
 	mov ax, selectorVideo
 	mov gs, ax
 
+	;mov ax, selectorCodeRing3
+	;mov ds, ax ;cannot work DPL and touch ds will cause CPU does Priveillege check
+
 	mov ah, 0x0C
-	xor esi, esi
-	xor edi, edi
+	mov al, '3'
+	;xor esi, esi
+	;xor edi, edi
 
-	mov esi, offsetMsg3
+	;mov esi, offsetMsg3
 	mov edi, (80 * 1 + 0) * 2
+	mov [gs:edi], ax
 
-.1:
-	lodsb
-	test al, al
-	jz	.2
-	mov	[gs:edi], ax
-	add	edi, 2
-	jmp	.1
-.2:
-	retf
+;cannot use it, no user level data secgment 
+;DPL is not correct
+;.1:
+	;lodsb
+	;test al, al
+	;jz	.2
+	;mov	[gs:edi], ax
+	;add	edi, 2
+	;jmp	.1
+;.2:
+	call selectorCallGate:0
+
+	jmp $
 
 SegCodeRing3Len 	equ $ - CODE_RING3_START
 
@@ -168,6 +214,13 @@ ALIGN 32
 STACK_START:
 	times	512		db	0
 TopOfStack			equ	$ - STACK_START - 1
+
+[SECTION .stack_region_ring3]
+ALIGN 32
+[BITS 32]
+STACK_RING3_START:
+	times   512     db 0
+TopOfStackRing3     equ $ - STACK_RING3_START - 1
 
 [SECTION .data]
 ALIGN 32
@@ -183,5 +236,39 @@ offsetMsg1				equ Message1 - $$
 offsetMsg2				equ Message2 - $$
 offsetMsg3				equ Message3 - $$
 
-SegData32Len		    equ	$ - DATA_START
+SegData32Len equ $ - DATA_START
 
+[SECTION .tss_region]
+ALIGN 32
+[BITS 32]
+
+TSS_START:
+	dd 		0
+	dd      TopOfStack
+	dd      selectorKstack
+	dd 		0
+	dd      0
+	dd 		0
+	dd      0
+	dd 		0
+	dd      0
+	dd 		0
+	dd      0
+	dd 		0
+	dd      0
+	dd 		0
+	dd      0
+	dd 		0
+	dd      0
+	dd 		0
+	dd      0
+	dd 		0
+	dd      0
+	dd 		0
+	dd      0
+	dd 		0
+	dd      0
+	dw      0
+	dw      $ - TSS_START + 2 ; I/O
+	db      0x0FF             ; I/O 
+tssLen		equ		$ - TSS_START
