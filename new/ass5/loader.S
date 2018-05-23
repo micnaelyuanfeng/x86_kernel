@@ -84,6 +84,15 @@ LABEL_BEGIN:
 	mov	byte [GDT_DATA + 4], al
 	mov	byte [GDT_DATA + 7], ah
 
+	xor	eax, eax
+	mov	ax, ds
+	shl	eax, 4
+	add	eax, DATA_RING3_START
+	mov	word [GDT_DATA_RING3 + 2], ax
+	shr	eax, 16
+	mov	byte [GDT_DATA_RING3 + 4], al
+	mov	byte [GDT_DATA_RING3 + 7], ah
+
 
 	xor	eax, eax
 	mov	ax, ds
@@ -144,11 +153,12 @@ PM_START:
 
 	retf
 
-	jmp $
-
 PM_START_TEST:
 	mov ax, selectorVideo
 	mov gs, ax
+
+	mov ax, selectorData
+	mov ds, ax
 
 	mov ah, 0x0C
 	;mov al, 'C'
@@ -156,9 +166,9 @@ PM_START_TEST:
 	xor edi, edi
 
 	mov esi, offsetMsg2
-	mov edi, (80 * 1 + 0) * 2
+	mov edi, (80 * 2 + 0) * 2
 	;mov [gs:edi], ax
-
+	cld
 .1:
 	lodsb
 	test al, al
@@ -169,8 +179,8 @@ PM_START_TEST:
 .2:
 
 	jmp $
-SegCode32LenTest	equ $ - PM_START_TEST
-SegCode32Len		equ	$ - PM_START
+SegCode32LenTest		equ $ - PM_START_TEST
+SegCode32Len			equ	$ - PM_START
 
 [SECTION .code_ring3]
 ALIGN 32
@@ -179,48 +189,46 @@ CODE_RING3_START:
 	mov ax, selectorVideo
 	mov gs, ax
 
-	;mov ax, selectorCodeRing3
-	;mov ds, ax ;cannot work DPL and touch ds will cause CPU does Priveillege check
+	mov ax, selectorDataRing3
+	mov ds, ax ;cannot work DPL and touch ds will cause CPU does Priveillege check
 
 	mov ah, 0x0C
-	mov al, '3'
-	;xor esi, esi
-	;xor edi, edi
+	;mov al, '3'
+	xor esi, esi
+	xor edi, edi
 
-	;mov esi, offsetMsg3
+	mov esi, offsetMsg4
 	mov edi, (80 * 1 + 0) * 2
-	mov [gs:edi], ax
-
+;	mov [gs:edi], ax
+	cld
 ;cannot use it, no user level data secgment 
 ;DPL is not correct
-;.1:
-	;lodsb
-	;test al, al
-	;jz	.2
-	;mov	[gs:edi], ax
-	;add	edi, 2
-	;jmp	.1
-;.2:
+.1:
+	lodsb
+	test al, al
+	jz	.2
+	mov	[gs:edi], ax
+	add	edi, 2
+	jmp	.1
+.2:
 	call selectorCallGate:0
 
-	jmp $
-
-SegCodeRing3Len 	equ $ - CODE_RING3_START
+SegCodeRing3Len 		equ $ - CODE_RING3_START
 
 [SECTION .stack_region]
 ALIGN 32
 [BITS 32]
 
 STACK_START:
-	times	512		db	0
-TopOfStack			equ	$ - STACK_START - 1
+	times	512			db	0
+TopOfStack				equ	$ - STACK_START - 1
 
 [SECTION .stack_region_ring3]
 ALIGN 32
 [BITS 32]
 STACK_RING3_START:
-	times   512     db 0
-TopOfStackRing3     equ $ - STACK_RING3_START - 1
+	times   512     	db 0
+TopOfStackRing3     	equ $ - STACK_RING3_START - 1
 
 [SECTION .data]
 ALIGN 32
@@ -230,13 +238,23 @@ DATA_START:
 
 Message1                db  "In Protect Mode", 0
 Message2				db  "Ring 0", 0
-Message3				db  "Ring 3", 0
 
 offsetMsg1				equ Message1 - $$
 offsetMsg2				equ Message2 - $$
-offsetMsg3				equ Message3 - $$
 
-SegData32Len equ $ - DATA_START
+SegData32Len 			equ $ - DATA_START
+
+[SECTION .data_ring3]
+ALIGN 32
+[BITS 32]
+
+DATA_RING3_START:
+
+Message4				db   "Ring 3", 0
+
+offsetMsg4				equ   Message4 - $$
+
+SegData32Ring3Len 		equ	$ - DATA_RING3_START
 
 [SECTION .tss_region]
 ALIGN 32
