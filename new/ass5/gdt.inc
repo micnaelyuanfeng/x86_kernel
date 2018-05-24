@@ -1,5 +1,5 @@
 [SECTION .gdt]
-
+[BITS 32]
 GDT_DEFAULT:    Descriptor 0,             0,                 0
 GDT_CODE:       Descriptor 0,             SegCode32Len-1,    DA_C|DA_32
 GDT_DATA:       Descriptor 0,             SegData32Len-1,    DA_DRW

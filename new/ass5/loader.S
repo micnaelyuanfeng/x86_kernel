@@ -21,6 +21,17 @@ LABEL_BEGIN:
 	mov dx, 0x0184F
 	int 0x10
 
+	;use VGA Mode does not affect cursor position
+	mov ah, 0x13
+	mov al, 0x1
+	mov bh, 0x0
+	mov bl, 0xb
+	mov cx, LengthMsg0
+	mov dh, 0x0
+	mov dl, 0x0
+	mov bp, Message0
+	int 0x10
+
 	xor	eax, eax
 	mov	ax, cs
 	shl	eax, 4
@@ -131,7 +142,7 @@ PM_START:
 	xor	esi, esi
 	xor	edi, edi
 	mov	esi, offsetMsg1	
-	mov	edi, (80 * 0 + 0) * 2	
+	mov	edi, (80 * 1 + 0) * 2	
 	cld
 .1:
 	lodsb
@@ -166,7 +177,7 @@ PM_START_TEST:
 	xor edi, edi
 
 	mov esi, offsetMsg2
-	mov edi, (80 * 2 + 0) * 2
+	mov edi, (80 * 3 + 0) * 2
 	;mov [gs:edi], ax
 	cld
 .1:
@@ -198,7 +209,7 @@ CODE_RING3_START:
 	xor edi, edi
 
 	mov esi, offsetMsg4
-	mov edi, (80 * 1 + 0) * 2
+	mov edi, (80 * 2 + 0) * 2
 ;	mov [gs:edi], ax
 	cld
 ;cannot use it, no user level data secgment 
@@ -235,6 +246,8 @@ ALIGN 32
 [BITS 32]
 
 DATA_START:
+Message0				db  "In Real Mode", 0
+LengthMsg0              equ $ - Message0
 
 Message1                db  "In Protect Mode", 0
 Message2				db  "Ring 0", 0
@@ -289,4 +302,4 @@ TSS_START:
 	dw      0
 	dw      $ - TSS_START + 2 ; I/O
 	db      0x0FF             ; I/O 
-tssLen		equ		$ - TSS_START
+tssLen equ $ - TSS_START
