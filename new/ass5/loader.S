@@ -9,6 +9,10 @@ org	0100h
 [SECTION .s16]
 [BITS	16]
 LABEL_BEGIN:
+	;In real mode, regs are 16 bits => all ops are 16 bits
+	;Address Mode = SegReg << 4 + Offset
+	;e.g Instruction Address = CodeSeg << 4 + IP
+	;BIOS INT handlers are using this addressing mode
 	mov	ax, cs
 	mov	ds, ax
 	mov	es, ax
@@ -128,7 +132,9 @@ LABEL_BEGIN:
 
 [SECTION .s32]
 [BITS	32]
-
+; PROTECT MODE Starts
+; Address Mode changes here and BIOS INT handlers cannot be used
+; Address Mode = GDT[selector].baseAddress + offset
 PM_START:
 	mov	ax, selectorData
 	mov	ds, ax			
@@ -156,6 +162,12 @@ PM_START:
 
 	mov ax, selectorTSS	
 	ltr ax
+
+	; CPU Mode = Kernel Mode and User Mode
+	; Use Far Call and Far Return to switch CPU mode
+	; Far means change Segment
+	; Near means within a Segment
+	; Far can change CPU mode base on Intel Chip Design
 
 	push selectorStackRing3
 	push TopOfStackRing3
@@ -269,6 +281,10 @@ offsetMsg4				equ   Message4 - $$
 
 SegData32Ring3Len 		equ	$ - DATA_RING3_START
 
+
+;TSS data structure
+;TSS will be used to get Stack when switch from low ring to high ring
+;Different ring has different stack
 [SECTION .tss_region]
 ALIGN 32
 [BITS 32]
