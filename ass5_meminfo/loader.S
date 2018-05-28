@@ -49,8 +49,8 @@ LABEL_BEGIN:
 							; BIOS use to verify if caller need system map info
 	int 0x15                ; If INT15 Fail, CF flag will be set
 	jc 	ReadMemInfoFail     ; Check CF Bit
-	add di, 0x14
-	inc dword [_memCR], 0
+	add di, 20
+	inc dword [_memCR]
 	cmp ebx, 0           	; ebx will be set != 0 means keep reading segInfo
 							; cmp will set ZF bit when equal and clear not equal   
 	jne .readSegInfo        ; jne = load EIP by result of preceding cmp
@@ -210,24 +210,16 @@ PM_START_TEST:
 
 	mov ax, selectorData
 	mov ds, ax
+	mov es, ax
 
-	mov ah, 0x0C
-	;mov al, 'C'
-	xor esi, esi
-	xor edi, edi
+	mov ax, selectorKstack
+	mov ss, ax
 
-	mov esi, offsetMsg2
-	mov edi, (80 * 3 + 0) * 2
-	;mov [gs:edi], ax
-	cld
-.1:
-	lodsb 
-	test al, al
-	jz	.2
-	mov	[gs:edi], ax
-	add	edi, 2
-	jmp	.1
-.2:
+	mov esp, TopOfStack
+
+	push offsetMsg2
+	call DisplayString
+	add esp, 4
 
 	push memSegTitle
 	call DisplayString
@@ -238,6 +230,8 @@ PM_START_TEST:
 	;call setup Page Table
 
 	jmp $
+
+%include "lib.inc"
 
 displayMemSegInfo:
 	push esi        ; easy convention = push all regs will use localy and
@@ -253,7 +247,7 @@ displayMemSegInfo:
 
 .1:
 	push dword [esi]    ;push 4 bytes on stack
-	call DisplayInteger
+	call DisplayIntegar
 	pop  eax			;retrive initial address of segInfo buffer
 
 	stosd               ;store eax value to ES:DI
@@ -274,8 +268,12 @@ displayMemSegInfo:
 	jb .2
 	mov [memSize], eax
 .2:
-	jmp .readGoOn
+	dec ecx
+	cmp ecx, 0
+	jne .readGoOn
+	;jmp .readGoOn
 
+Done:
 	call DisplayReturn
 
 	push ramSizeTitle
@@ -283,7 +281,7 @@ displayMemSegInfo:
 	add  esp, 4
 
 	push dword [memSize] ; convention
-	call DisplayInteger
+	call DisplayIntegar
 	add  esp, 4
 
 	pop ecx
@@ -349,13 +347,13 @@ ALIGN 32
 
 DATA_START:
 
-%include    "pmeminfo.inc"
+%include    "meminfo.inc"
 
 Message0				db  "In Real Mode", 0
 LengthMsg0              equ $ - Message0
 
 Message1                db  "In Protect Mode", 0
-Message2				db  "Ring 0", 0
+Message2				db  "Ring 0", 0x0A, 0
 
 offsetMsg1				equ Message1 - $$
 offsetMsg2				equ Message2 - $$
