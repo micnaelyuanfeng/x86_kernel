@@ -1,12 +1,3 @@
-SRC := loader.S
-BIN := $(subst .S,.bin, $(SRC))
-
-$(BIN) : $(SRC)
-	nasm $< -o $@
-
-##############################################
-#  Install Bootloader and Load Kernel Image  #
-##############################################
 .PHONY: install
 
 install:
@@ -28,8 +19,3 @@ remove:
 	rm *.img
 	rm *.bin
 	rm *.elf
-
-.PHONY: dump
-
-dump:
-	objdump -D loader.bin

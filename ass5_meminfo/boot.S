@@ -2,7 +2,7 @@ org 0x7c00 								;pseduo code for linker
 	; BPB header 
 	; This is formating process which is to add this header
 	; in boot section 
-	jmp BOOT_STRAP_START 
+	jmp BOOT_STRAP_START
 	nop
 	BS_OEMName			DB		'BCFYOS01' ;Must be 8 bytes
 	BPB_BytePerSec		DW		512
@@ -25,25 +25,25 @@ org 0x7c00 								;pseduo code for linker
 	BS_FileSysType		DB		'FAT12'
 
 ;Define and Variables
-BaseOfLoader		 	equ		0x9000
-OffsetOfLoader       	equ		0x100   	; predefined local memory address for sector
-RootDirSectors		 	equ		14 			; changable but usually fixed
-SectNoOfRootDir	     	equ		19      	; default RootDirSectors start sector number
-SectorNoOfFAT1       	equ		1       	; sector number of FAT1 
+BaseOfLoader		 equ		0x9000
+OffsetOfLoader       equ		0x100   	; predefined local memory address for sector
+RootDirSectors		 equ		14 			; changable but usually fixed
+SectNoOfRootDir	     equ		19      	; default RootDirSectors start sector number
+SectorNoOfFAT1       equ		1       	; sector number of FAT1 
 
-wRootDirSizeForLoop  	dw	    RootDirSectors
-wSectorNo			 	dw		0 			; initial value is 0
-bOdd				 	db		0
+wRootDirSizeForLoop  dw	    	RootDirSectors
+wSectorNo			 dw			0 			; initial value is 0
+bOdd				 db			0
 
-LoaderFileName		 	db		"LOADER  BIN", 0
+LoaderFileName		 db			"LOADER  BIN", 0
 
-MessageLength		 	equ		9
-BootMessage:		 	db		"Booting  "
-Message1			 	db     	"Ready    "
-Message2             	db     	"No Loader"
+MessageLength		 equ		9
+BootMessage:		 db			"Booting  "
+Message1			 db     	"Ready.   "
+Message2             db     	"No Loader"
 
-BaseOfStack			 	equ    	0x7c00
-DeltaSectorNo        	equ    	17          ; sector offset to address loading area
+BaseOfStack			 equ    	0x7c00
+DeltaSectorNo        equ    	17          ; sector offset to address loading area
 
 ;                 
 ;                 |  Load Area            |
@@ -114,8 +114,8 @@ CHECK_FILE_NAME:
 	jz  LOADER_FOUND
 	dec cx
 	
-	lodsb 						;update SI register
-	cmp al, byte [es:di]
+	lodsb ;update SI register
+	cmp al, [es:di]
 	jz  CHECK_NEXT_CHAR_IN_FILENAME
 	jmp CHECK_NEXT_ENTRY
 
@@ -132,18 +132,10 @@ CHECK_NEXT_ENTRY:
 	jmp SEARCH_LOADER_BIN_IN_SECTOR
 
 CHECK_NEXT_SECTOR:
-	add word [wSectorNo], 1     ;update sector number to get floppy access paramters
+	add word [wSectorNo], 1      ;update sector number to get floppy access paramters
 	jmp SEARCH_LOADER_BIN_IN_DIR
 
-LOADER_FOUND:
-	jmp  LOAD_LOADER_START
-
-LOADER_NOT_EXIST:
-	mov  dh, 2
-	call DISPLAY_MESSAGE
-	jmp  $
-
-READ_FROM_MEMORY_A_SECTOR: 		;parameter is sector number => floppy reading arguments and call BIOS INT13
+READ_FROM_MEMORY_A_SECTOR: ;parameter is sector number => floppy reading arguments and call BIOS INT13
 	;calculatr parameters to read
 	push bp,
 	mov  bp, sp
@@ -176,6 +168,30 @@ READ_FROM_MEMORY_A_SECTOR: 		;parameter is sector number => floppy reading argum
 
  	ret
 
+DISPLAY_MESSAGE:
+	mov ax, MessageLength
+	mul dh  				; multiply ax by dh = select msg element in array
+	add ax, BootMessage 	; move to the last char of string
+	mov bp, ax
+	mov ax, ds 				; extra segment
+	mov es, ax 				; set text starting point ES:BP
+	mov cx, MessageLength 	; set loop counter
+	mov ax, 0x1301 			; INT subvector number
+	mov bx, 0x07
+
+	;reset cursor position
+	mov dl, 0
+	int 0x10
+	ret 					; ret and call pair
+
+LOADER_FOUND:
+	jmp  LOAD_LOADER_START
+
+LOADER_NOT_EXIST:
+	mov  dh, 2
+	call DISPLAY_MESSAGE
+	jmp  $
+
 LOAD_LOADER_START:
 	mov  ax, RootDirSectors
 	and  di, 0xFFE0
@@ -198,16 +214,16 @@ LOAD_LOADER_GO_ON:
 	mov	 bl, 0x0F			
 	int	 0x10			
 	pop	 bx			
-	pop	 ax	
-
+	pop	 ax			
 	mov  cl, 1
+
 	call READ_FROM_MEMORY_A_SECTOR
 	pop  ax
 
 	call GET_FAT_ENTRY
 	cmp  ax, 0x0FFF            ; FAT_ENTRY = 0xFFF means last FAT ENTRY and stop
 
-	jz   LOADING_DONE
+	jz   BOOT_PROGRAM_DONE
 
 	; update Target Sector 
 	push ax
@@ -216,29 +232,7 @@ LOAD_LOADER_GO_ON:
 	add  ax, DeltaSectorNo
 	add	 bx, [BPB_BytePerSec]
 	jmp  LOAD_LOADER_GO_ON
-
-
-LOADING_DONE:
-	mov  dh, 1
-	call DISPLAY_MESSAGE
-	jmp  BaseOfLoader:OffsetOfLoader
-
-DISPLAY_MESSAGE:
-	mov ax, MessageLength
-	mul dh  				; multiply ax by dh = select msg element in array
-	add ax, BootMessage 	; move to the last char of string
-	mov bp, ax
-	mov ax, ds 				; extra segment
-	mov es, ax 				; set text starting point ES:BP
-	mov cx, MessageLength 	; set loop counter
-	mov ax, 0x1301 			; INT subvector number
-	mov bx, 0x07
-
-	;reset cursor position
-	mov dl, 0
-	int 0x10
-	ret 					; ret and call pair
-
+	
 GET_FAT_ENTRY:
 	push es
 	push bx
@@ -277,10 +271,15 @@ LABEL_EVEN_2:
 	and	ax, 0x0FFF
 
 LABEL_GET_FAT_ENRY_OK:
+
 	pop	bx
 	pop	es
 	ret
 
+BOOT_PROGRAM_DONE:
+	mov  dh, 1
+	call DISPLAY_MESSAGE
+	jmp  BaseOfLoader:OffsetOfLoader
+
 times 			510 - ($ - $$) db 0
-				       dw 0xaa55
-							 
+				dw 0xaa55

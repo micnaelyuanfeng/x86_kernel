@@ -1,5 +1,8 @@
-[SECTION .gdt]
-[BITS 32]
+; GDT Table and GDT table location
+
+
+;GDT Entry defintion
+;GDT = Base Address + Size + Attributes
 GDT_DEFAULT:    Descriptor 0,             0,                 0
 GDT_CODE:       Descriptor 0,             SegCode32Len-1,    DA_C|DA_32
 GDT_DATA:       Descriptor 0,             SegData32Len-1,    DA_DRW
@@ -8,11 +11,14 @@ GDT_VIDEO:      Descriptor 0xb8000,       0xFFFF,            DA_DRW|DA_DPL3
 GDT_CODE_RING3: Descriptor 0, 			  SegCodeRing3Len-1, DA_C|DA_32|DA_DPL3
 GDT_TSS:		Descriptor 0,             tssLen-1,          DA_386TSS     ;need to be DPL3
 GDT_DATA_RING3: Descriptor 0,             SegData32Ring3Len-1, DA_DRW|DA_DPL3
+GDT_PAGE_TABLE: Descriptor 0,             0xFFFFF,           DA_DRW|DA_LIMIT_4K
 
 GDT_KSTACK:     Descriptor 0,             TopOfStack,      DA_DRW|DA_32
 GDT_STACKRING3: Descriptor 0,             TopOfStackRing3, DA_DRW|DA_32|DA_DPL3
 
 
+;Call Gate Definition
+;Call Gate = selector of Target GDT and DPL of call gate
 CALL_GATE:      Gate       selectorCodeTest, 0, 0, DA_386CGate + DA_DPL3
 
 
@@ -21,13 +27,16 @@ gdtPtr          	dw      gdtLen - 1
                 	;dd      BaseOfLoader * 0x10 + GDT_DEFAULT
                 	dd      0 ;offset
 
+;selector Definitions
+;selector = 13 bits of GDT_INDEX and 3 bits RPL
+
 selectorCode    	equ GDT_CODE  - GDT_DEFAULT
 selectorData    	equ GDT_DATA  - GDT_DEFAULT
 selectorVideo   	equ GDT_VIDEO - GDT_DEFAULT
 selectorCodeTest	equ GDT_CODE_TEST - GDT_DEFAULT
 selectorCallGate    equ CALL_GATE - GDT_DEFAULT
 selectorTSS			equ GDT_TSS   - GDT_DEFAULT
-
+selectorPageTable   equ GDT_PAGE_TABLE - GDT_DEFAULT
 
 selectorCodeRing3   equ GDT_CODE_RING3 - GDT_DEFAULT + SA_RPL3
 selectorDataRing3   equ GDT_DATA_RING3 - GDT_DEFAULT + SA_RPL3

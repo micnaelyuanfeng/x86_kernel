@@ -4,6 +4,7 @@ org	0100h
 	jmp	LABEL_BEGIN
 
 %include	"pm.inc"
+%include    "vm.inc"
 %include    "gdt.inc"
 
 [SECTION .s16]
@@ -229,6 +230,7 @@ PM_START_TEST:
 
 	call displayMemSegInfo
 
+	;enable paging
 	;call setup Page Table
 
 	jmp $
@@ -293,6 +295,56 @@ Done:
 
 	ret
 
+setupPageTable:
+	
+	xor  edx, edx
+	mov  eax, [memSize]
+	mov  ebx, 0x400000
+	div  ebx
+	mov  ecx, eax
+	test edx, edx
+
+	jz   .no_remainder
+	inc  ecx
+
+.no_remainder:
+	mov [pageTableNumber], ecx
+
+;fill page table entries
+	mov ax, selectorPageTable  ; 16 bits
+	mov es, ax
+	mov edi, pageDirBase
+	xor eax, eax
+	mov eax, pageTblBase | PG_P | PG_US_USER | PG_RW_RWX
+
+	stosd                 ; store value in EAX into ES:EDI in 32 bits
+	
+	mov eax, [pageTableNumber]
+	mov ebx, 1024         ; each page table has 1024 entries
+	mul ebx               ; eax = eax * ebx
+	mov ecx, eax
+
+	mov edi, pageTblBase
+	xor eax, eax
+	mov eax, PG_P | PG_US_USER | PG_RW_RWX
+
+.buildGoOn:
+	stosd
+	add eax, 4096
+	dec ecx
+
+	cmp ecx, 0
+	jne .buildGoOn
+
+	mov eax,  pageDirBase ; 32 bit instructions = cannot use ax, al = overflow
+	mov cr3, eax
+	mov eax, cr0
+	or  eax, 0x80000000   ; set paging bit = enable paging
+	mov cr0, eax
+
+	;initialize Page Table
+	ret
+
 SegCode32LenTest		equ $ - PM_START_TEST
 SegCode32Len			equ	$ - PM_START
 
@@ -350,7 +402,7 @@ ALIGN 32
 
 DATA_START:
 
-%include    "pmeminfo.inc"
+%include    "meminfo.inc"
 
 Message0				db  "In Real Mode", 0
 LengthMsg0              equ $ - Message0
@@ -369,6 +421,9 @@ colorLCyan              dd  0xB
 offsetColorCyan			equ colorCyan - $$
 offsetColorLBlue		equ colorLBlue - $$
 offsetColorLCyan        equ colorLCyan - $$
+
+_pageTableNumber		dd	0
+pageTableNumber         equ _pageTableNumber - $$
 
 SegData32Len 			equ $ - DATA_START
 
@@ -422,4 +477,5 @@ TSS_START:
 	dw      $ - TSS_START + 2 ; I/O
 	db      0x0FF             ; I/O 
 tssLen equ $ - TSS_START
+
 
