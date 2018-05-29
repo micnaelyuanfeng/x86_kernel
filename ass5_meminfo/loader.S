@@ -218,12 +218,14 @@ PM_START_TEST:
 	mov esp, TopOfStack
 
 	push offsetMsg2
+	push dword [offsetColorLCyan] 
 	call DisplayString
-	add esp, 4
+	add esp, 8
 
 	push memSegTitle
+	push dword [offsetColorLBlue]
 	call DisplayString
-	add  esp, 4
+	add  esp, 8
 
 	call displayMemSegInfo
 
@@ -260,7 +262,7 @@ displayMemSegInfo:
 	call DisplayReturn  ;this ADR display done
 
 	cmp  dword [segType], 1 ; check this seg type
-	jne  .2
+	jne  .2 
 
 	mov eax, [segBaseAddrLo]
 	add eax, [segLenLo]
@@ -277,8 +279,9 @@ Done:
 	call DisplayReturn
 
 	push ramSizeTitle
+	push dword [offsetColorLBlue]
 	call DisplayString
-	add  esp, 4
+	add  esp, 8
 
 	push dword [memSize] ; convention
 	call DisplayIntegar
@@ -347,16 +350,25 @@ ALIGN 32
 
 DATA_START:
 
-%include    "meminfo.inc"
+%include    "pmeminfo.inc"
 
 Message0				db  "In Real Mode", 0
 LengthMsg0              equ $ - Message0
 
 Message1                db  "In Protect Mode", 0
-Message2				db  "Ring 0", 0x0A, 0
+Message2				db  "Enter Ring 0", 0x0A, 0
 
 offsetMsg1				equ Message1 - $$
 offsetMsg2				equ Message2 - $$
+
+;Color
+colorCyan				dd	0x3
+colorLBlue              dd  0x9
+colorLCyan              dd  0xB
+
+offsetColorCyan			equ colorCyan - $$
+offsetColorLBlue		equ colorLBlue - $$
+offsetColorLCyan        equ colorLCyan - $$
 
 SegData32Len 			equ $ - DATA_START
 
@@ -366,13 +378,13 @@ ALIGN 32
 
 DATA_RING3_START:
 
-Message4				db   "Ring 3", 0
+Message4				db   "Enter Ring 3", 0
 
 offsetMsg4				equ   Message4 - $$
 
 SegData32Ring3Len 		equ	$ - DATA_RING3_START
 
-
+ 
 ;TSS data structure
 ;TSS will be used to get Stack when switch from low ring to high ring
 ;Different ring has different stack

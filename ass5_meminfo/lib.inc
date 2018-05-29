@@ -6,7 +6,7 @@ DisplayAL:
 
 	mov	edi, [displayPosition]
 
-	mov	ah, 0Fh			
+	mov	ah, 0Eh			
 	mov	dl, al
 	shr	al, 4
 	mov	ecx, 2
@@ -36,7 +36,7 @@ DisplayAL:
 	ret
 
 DisplayIntegar:
-	mov ah, 0x0c
+	mov ah, 0x07
 	mov al, '0'
 	push	edi
 	mov	edi, [displayPosition]
@@ -45,7 +45,7 @@ DisplayIntegar:
 	mov	[displayPosition], edi
 	pop	edi
 
-	mov ah, 0x0c
+	mov ah, 0x07
 	mov al, 'x'
 	push	edi
 	mov	edi, [displayPosition]
@@ -69,7 +69,7 @@ DisplayIntegar:
 	mov	eax, [esp + 4]
 	call	DisplayAL
 
-	mov ah, 0x07
+	mov ah, 0x0E
 	mov al, ' '
 	push	edi
 	mov	edi, [displayPosition]
@@ -78,7 +78,7 @@ DisplayIntegar:
 	mov	[displayPosition], edi
 	pop	edi
 
-	mov ah, 0x07
+	mov ah, 0x0E
 	mov al, ' '
 	push	edi
 	mov	edi, [displayPosition]
@@ -87,7 +87,7 @@ DisplayIntegar:
 	mov	[displayPosition], edi
 	pop	edi
 
-	mov ah, 0x07
+	mov ah, 0x0E
 	mov al, ' '
 	push	edi
 	mov	edi, [displayPosition]
@@ -96,7 +96,7 @@ DisplayIntegar:
 	mov	[displayPosition], edi
 	pop	edi
 
-	mov ah, 0x07
+	mov ah, 0x0E
 	mov al, ' '
 	push	edi
 	mov	edi, [displayPosition]
@@ -113,10 +113,10 @@ DisplayString:
 	push	ebx
 	push	esi
 	push	edi
-
-	mov	esi, [ebp + 8]	; pszInfo
+    
+	mov	esi, [ebp + 12]	; pszInfo
 	mov	edi, [displayPosition]
-	mov	ah, 0Fh
+	mov	ah, byte [ebp + 8]
 .1:
 	lodsb
 	test	al, al
@@ -150,7 +150,8 @@ DisplayString:
 
 DisplayReturn:
 	push	returnSet
+    push    returnSet
 	call	DisplayString			;printf("\n");
-	add	esp, 4
+	add	esp, 8
 
 	ret
