@@ -4,10 +4,10 @@ org	0100h
 	jmp	LABEL_BEGIN
 
 %include	"pm.inc"
-%include    "vm.inc"
 %include    "gdt.inc"
+%include    "idt.inc"
 
-[SECTION .s16]
+[SECTION .s16] 
 [BITS	16]
 LABEL_BEGIN:
 	;In real mode, regs are 16 bits => all ops are 16 bits
@@ -137,6 +137,7 @@ ReadMemeInfoDone:
 	mov	byte [GDT_DATA_RING3 + 4], al
 	mov	byte [GDT_DATA_RING3 + 7], ah
 
+	; load gdt
 
 	xor	eax, eax
 	mov	ax, ds
@@ -144,9 +145,19 @@ ReadMemeInfoDone:
 	add	eax, GDT_DEFAULT		
 	mov	dword [gdtPtr + 2], eax	
 
+	; load idt
+
+	xor eax, eax
+	mov ax, ds    ;update ax to ds
+	shl eax, 4
+	add eax, IDT_TABLE
+	mov dword [idtPtr + 2], eax
+
 	lgdt	[gdtPtr]
 
 	cli
+
+	lidt [idtPtr]
 
 	in	al, 0x92
 	or	al, 0b010
@@ -230,8 +241,9 @@ PM_START_TEST:
 
 	call displayMemSegInfo
 
-	;enable paging
 	;call setup Page Table
+    call Init8259A
+	int 0x10
 
 	jmp $
 
@@ -295,54 +307,64 @@ Done:
 
 	ret
 
-setupPageTable:
+_genericIntHandler:
+genericIntHandler	equ		_genericIntHandler - $$
+	mov ah, 0xc
+	mov al, '!'
+
+	mov [gs: ((80 * 15 + 0) * 2)], ax
 	
-	xor  edx, edx
-	mov  eax, [memSize]
-	mov  ebx, 0x400000
-	div  ebx
-	mov  ecx, eax
-	test edx, edx
+	jmp $
 
-	jz   .no_remainder
-	inc  ecx
+	iretd
 
-.no_remainder:
-	mov [pageTableNumber], ecx
-
-;fill page table entries
-	mov ax, selectorPageTable  ; 16 bits
-	mov es, ax
-	mov edi, pageDirBase
-	xor eax, eax
-	mov eax, pageTblBase | PG_P | PG_US_USER | PG_RW_RWX
-
-	stosd                 ; store value in EAX into ES:EDI in 32 bits
+Init8259A:
+	mov al, 0x11
+    out 0x20, al
+	call io_wait
 	
-	mov eax, [pageTableNumber]
-	mov ebx, 1024         ; each page table has 1024 entries
-	mul ebx               ; eax = eax * ebx
-	mov ecx, eax
+	out 0xA0, al
+	call io_wait
 
-	mov edi, pageTblBase
-	xor eax, eax
-	mov eax, PG_P | PG_US_USER | PG_RW_RWX
+	mov al, 0x20
+	out 0x21, al
+	call io_wait
 
-.buildGoOn:
-	stosd
-	add eax, 4096
-	dec ecx
+	mov al, 0x28
+	out 0xA1, al
+	call io_wait
 
-	cmp ecx, 0
-	jne .buildGoOn
+	mov al, 0x04
+	out 0x21, al
+	call io_wait
 
-	mov eax,  pageDirBase ; 32 bit instructions = cannot use ax, al = overflow
-	mov cr3, eax
-	mov eax, cr0
-	or  eax, 0x80000000   ; set paging bit = enable paging
-	mov cr0, eax
+	mov al, 0x02
+	out 0xA1, al
+	call io_wait
 
-	;initialize Page Table
+	mov al, 0x01
+	out 0x21, al
+	call io_wait
+
+	out 0xA1, al
+	call io_wait
+
+	mov al, 0b11111110
+	out 0x21, al
+	call io_wait
+
+	mov al, 0b11111111
+	out 0xA1, al
+	call io_wait
+
+	ret
+
+io_wait:
+	nop
+	nop
+	nop
+	nop
+	
 	ret
 
 SegCode32LenTest		equ $ - PM_START_TEST
@@ -402,7 +424,7 @@ ALIGN 32
 
 DATA_START:
 
-%include    "meminfo.inc"
+%include    "pmeminfo.inc"
 
 Message0				db  "In Real Mode", 0
 LengthMsg0              equ $ - Message0
@@ -421,9 +443,6 @@ colorLCyan              dd  0xB
 offsetColorCyan			equ colorCyan - $$
 offsetColorLBlue		equ colorLBlue - $$
 offsetColorLCyan        equ colorLCyan - $$
-
-_pageTableNumber		dd	0
-pageTableNumber         equ _pageTableNumber - $$
 
 SegData32Len 			equ $ - DATA_START
 
@@ -477,5 +496,4 @@ TSS_START:
 	dw      $ - TSS_START + 2 ; I/O
 	db      0x0FF             ; I/O 
 tssLen equ $ - TSS_START
-
 
