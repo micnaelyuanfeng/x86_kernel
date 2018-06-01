@@ -243,6 +243,23 @@ PM_START_TEST:
 
 	call displayMemSegInfo
 
+	call DisplayReturn
+	
+	push offsetTestMsg0
+	push dword [offsetColorLGreen]
+	call DisplayString
+	add esp, 8
+
+	push offsetTestMsg1
+	push dword [offsetColorLGreen]
+	call DisplayString
+	add esp, 8
+
+	push offsetTestMsg2
+	push dword [offsetColorLMagenta]
+	call DisplayString
+	add esp, 8
+
 	;call setup Page Table
     
 	call Init8259A
@@ -437,7 +454,16 @@ ALIGN 32
 
 DATA_START:
 
-%include    "pmeminfo.inc"
+%include    "meminfo.inc"
+
+TestMsg0                db  "abcdefghijklmnopqrstuvwxyz", 0x0A, 0
+LengthTestMsg0          equ $ - TestMsg0
+
+TestMsg1                db  "ABCDEFGHIJKLMNOPQRSTUVWXYZ", 0x0A, 0
+LengthTestMsg1          equ $ - TestMsg1
+
+TestMsg2				db  "0123456789,.;/[]{}\|~!@#$%^&*()-+=", 0x0A, 0 
+LengthTestMsg2          equ $ - TestMsg2
 
 Message0				db  "In Real Mode", 0
 LengthMsg0              equ $ - Message0
@@ -447,15 +473,24 @@ Message2				db  "Enter Ring 0", 0x0A, 0
 
 offsetMsg1				equ Message1 - $$
 offsetMsg2				equ Message2 - $$
+offsetTestMsg0			equ TestMsg0 - $$
+offsetTestMsg1			equ TestMsg1 - $$
+offsetTestMsg2			equ TestMsg2 - $$
 
 ;Color
 colorCyan				dd	0x3
 colorLBlue              dd  0x9
 colorLCyan              dd  0xB
+colorGreen              dd  0x2 
+colorLGreen             dd  0xA
+colorLMagenta           dd  0xD
 
 offsetColorCyan			equ colorCyan - $$
 offsetColorLBlue		equ colorLBlue - $$
 offsetColorLCyan        equ colorLCyan - $$
+offsetColorGreen        equ colorGreen - $$
+offsetColorLGreen       equ colorLGreen - $$
+offsetColorLMagenta     equ colorLMagenta - $$
 
 SegData32Len 			equ $ - DATA_START
 
