@@ -5,10 +5,10 @@ ALIGN 32
 IDT_TABLE:
 
 %rep 128
-	Gate	PM_START_TEST, genericIntHandler, 0, DA_386IGate 
+	Gate	selectorCode, genericIntHandler, 0, DA_386IGate 
 %endrep
 
-;.0x80:		Gate,	PM_START_TEST, genericIntHandler, 0, DA_386IGate
+.0x80:		Gate	selectorCode, genericIntHandler, 0, DA_386IGate
 
 
 idtLen			equ 		$ - IDT_TABLE

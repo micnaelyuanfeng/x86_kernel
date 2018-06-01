@@ -70,7 +70,7 @@ ReadMemeInfoDone:
 	shl	eax, 4
 	add	eax, PM_START
 	mov	word [GDT_CODE + 2], ax
-	shr	eax, 16
+	shr	eax, 16 
 	mov	byte [GDT_CODE + 4], al
 	mov	byte [GDT_CODE + 7], ah
 
@@ -168,6 +168,8 @@ ReadMemeInfoDone:
 	or	eax, 1
 	mov	cr0, eax
 
+	;sti
+ 
 	jmp	dword selectorCode:0
 
 [SECTION .s32]
@@ -192,7 +194,7 @@ PM_START:
 	cld
 .1:
 	lodsb
-	test al, al
+	test al, al 
 	jz	.2
 	mov	[gs:edi], ax
 	add	edi, 2
@@ -242,8 +244,11 @@ PM_START_TEST:
 	call displayMemSegInfo
 
 	;call setup Page Table
-    call Init8259A
-	int 0x10
+    
+	call Init8259A
+	int 0x80
+
+	;sti 
 
 	jmp $
 
@@ -304,7 +309,7 @@ Done:
 	pop ecx
 	pop edi
 	pop esi
-
+ 
 	ret
 
 _genericIntHandler:
@@ -312,10 +317,18 @@ genericIntHandler	equ		_genericIntHandler - $$
 	mov ah, 0xc
 	mov al, '!'
 
-	mov [gs: ((80 * 15 + 0) * 2)], ax
-	
-	jmp $
+	mov [gs: ((80 * 17 + 0) * 2)], ax
 
+	mov	al, 0x20
+	out	0x20, al	
+	iretd
+
+_ClockHandler:
+ClockHandler	equ	_ClockHandler - $$
+	inc	byte [gs:((80 * 0 + 70) * 2)]
+
+	mov	al, 20h
+	out	20h, al				
 	iretd
 
 Init8259A:
