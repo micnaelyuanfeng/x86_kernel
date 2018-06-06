@@ -4,32 +4,12 @@ org 0x7c00 								;pseduo code for linker
 	; in boot section 
 	jmp BOOT_STRAP_START 
 	nop
-	BS_OEMName			DB		'BCFYOS01' ;Must be 8 bytes
-	BPB_BytePerSec		DW		512
-	BPB_SecPerClus		DB		1
-	BPB_RsvdSecCnt		DW		1
-	BPB_NumFATs			DB		2
-	BPB_RootEntCnt		DW		224
-	BPB_TotSec16		DW		2880
-	BPB_Media			DB		0xF0
-	BPB_FATSz16			DW		9
-	BPB_SecPerTrk		DW		18
-	BPB_NumHeads		DW		2
-	BPB_HiddSec			DD		0
-	BPB_TotSec32		DD		0
-	BS_DrvNum			DB		0
-	BS_Reserved1		DB		0
-	BS_BootSig			DB		0x29
-	BS_VolID			DD 		0
-	BS_VolLab			DB		'Kernel_impl'
-	BS_FileSysType		DB		'FAT12'
+	%include "fat12hdr.inc"
 
 ;Define and Variables
 BaseOfLoader		 	equ		0x9000
 OffsetOfLoader       	equ		0x100   	; predefined local memory address for sector
-RootDirSectors		 	equ		14 			; changable but usually fixed
-SectNoOfRootDir	     	equ		19      	; default RootDirSectors start sector number
-SectorNoOfFAT1       	equ		1       	; sector number of FAT1 
+ 
 
 wRootDirSizeForLoop  	dw	    RootDirSectors
 wSectorNo			 	dw		0 			; initial value is 0
@@ -43,7 +23,6 @@ Message1			 	db     	"Ready    "
 Message2             	db     	"No Loader"
 
 BaseOfStack			 	equ    	0x7c00
-DeltaSectorNo        	equ    	17          ; sector offset to address loading area
 
 ;                 
 ;                 |  Load Area            |
