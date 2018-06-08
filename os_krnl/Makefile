@@ -1,13 +1,13 @@
 #############################################
 #                 MakeFile                  #
 #############################################
-BOOT_SRC := boot.S
-LOAD_SRC := loader.S
-KERN_SRC := kernel.S
+BOOT_SRC := boot.asm
+LOAD_SRC := loader.asm
+KERN_SRC := kernel.asm
 
-BOOT_BIN := $(subst .S,.bin, $(BOOT_SRC))
-LOAD_BIN := $(subst .S,.bin, $(LOAD_SRC))
-KERN_BIN := $(subst .S,.bin, $(KERN_SRC))
+BOOT_BIN := $(subst .asm,.bin, $(BOOT_SRC))
+LOAD_BIN := $(subst .asm,.bin, $(LOAD_SRC))
+KERN_BIN := $(subst .asm,.bin, $(KERN_SRC))
 
 DISK     := a.img
 
@@ -16,23 +16,22 @@ DISK     := a.img
 ##############################################
 .PHONY: all
 
-all: $(BOOT_BIN) 
+all: $(BOOT_BIN) $(LOAD_BIN) $(KERN_BIN)
 
 $(BOOT_BIN): $(BOOT_SRC)
 	nasm $< -o $@
 
-#$(LOAD_BIN): $(LOAD_SRC)
-#	nasm $< -o $@
+$(LOAD_BIN): $(LOAD_SRC)
+	nasm $< -o $@
 
-#$(KERN_BIN): $(KERN_SRC)
-#	nasm -f elf32 $< -o $@
+$(KERN_BIN): $(KERN_SRC)
+	nasm -f elf32 $< -o $@
 
-.PHONY: install
 install:
 	dd if=boot.bin of=$(DISK) bs=512 count=1 conv=notrunc
 	sudo mount a.img -o loop /mnt/floppy
-	#sudo cp loader.bin /mnt/floppy
-	#sudo cp kernel.bin /mnt/floppy
+	sudo cp loader.bin /mnt/floppy
+	sudo cp kernel.bin /mnt/floppy
 	sudo umount /mnt/floppy
 
 	bochs -f bochsrc
@@ -48,4 +47,3 @@ remove:
 
 dump:
 	objdump -D loader.bin
-

@@ -155,20 +155,3 @@ DisplayReturn:
 	add	esp, 8
 
 	ret
-
-DisplayString:
-    mov	ax, MessageLength
-	mul	dh
-	add	ax, LoadMessage
-	mov	bp, ax
-	mov	ax, ds
-	mov	es, ax
-	mov	cx, MessageLength	
-	mov	ax, 0x01301
-	mov	bx, 0x7
-	mov	dl, 0x0
-	add	dh, 0x3
-	
-	int	0x10
-	
-	ret

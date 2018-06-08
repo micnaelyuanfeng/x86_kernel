@@ -50,6 +50,7 @@ colorLightCyan              db      0xB
 offsetLightCyan             db      BaseOfLoaderPhyAddr + $
 
 colorLightBlue              db      0x9
+offsetLightBlue             db      BaseOfLoaderPhyAddr + $
 
 ;Stack Ring0 Information
 [SECTION .stack_region_ring0]
@@ -58,37 +59,3 @@ ALIGN 32
 STACK_RING0_START:
     times           1024    db  0
 TopOfStackRing0             equ BaseOfLoaderPhyAddr + $
-
-[SECTION .tss_region]
-ALIGN 32
-[BITs 32]
-TSS_START:
-    dd      0
-    dd      TopOfStackRing0
-    dd      selectorCode
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dd      0
-    dw      0
-    dw      $ - TSS_START + 2 ; I/O
-    db      0x0FF             ; I/O 
-tssLen equ $ - TSS_START

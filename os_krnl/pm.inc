@@ -1,4 +1,4 @@
-DA_32		    	equ	    0x4000
+DA_32		   		equ	    0x4000
 DA_LIMIT_4K         equ     0x8000
 
 DA_DPL0             equ     0x0
@@ -27,11 +27,11 @@ SA_TIG		    	equ	    0
 SA_TIL		    	equ	    4
 
 ; Gate 
-DA_TaskGate			equ	  0x85	; task_gate
-DA_386TSS			equ	  0x89	; TSS
-DA_386CGate			equ	  0x8C	; 386 call_gate
-DA_386IGate			equ	  0x8E	; 386 interrupt
-DA_386TGate			equ	  0x8F	; 386 trap
+DA_TaskGate	    	equ	    0x85	; task_gate
+DA_386TSS	    	equ	    0x89	; TSS
+DA_386CGate	    	equ	    0x8C	; 386 call_gate
+DA_386IGate	    	equ	    0x8E	; 386 interrupt
+DA_386TGate	    	equ	    0x8F	; 386 trap
 
 %macro Descriptor 3
 	dw	%2 & 0FFFFh				            ; limit
