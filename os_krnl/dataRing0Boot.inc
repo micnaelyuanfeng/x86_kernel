@@ -38,14 +38,17 @@ memSegInfoBuff              equ     BaseOfLoaderPhyAddr + _memSegInfoBuff
 
 ;Debug Information
 debugMsg0                   db      "In Real Mode", 0
-lengthDebugMsg0             equ     BaseOfLoaderPhyAddr + $
+offsetDebugMsg0             equ     BaseOfLoaderPhyAddr + $ ;should not use seg relative offset
 
-degbugMsg1                   db      "In Protect Mode", 0
-lengthDebugMsg1             equ     BaseOfLoaderPhyAddr + $
+degbugMsg1                  db      "In Protect Mode", 0
+offsetDebugMsg1             equ     BaseOfLoaderPhyAddr + $
 
 colorCyan                   db      0x3
+offsetColorCyan             equ     BaseOfLoaderPhyAddr + $
 
 colorLightCyan              db      0xB
+offsetLightCyan             db      BaseOfLoaderPhyAddr + $
+
 colorLightBlue              db      0x9
 
 ;Stack Ring0 Information

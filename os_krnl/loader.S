@@ -4,6 +4,9 @@ BaseOfLoaderPhyAddr		equ		(0x9000 << 4)
 org	0x100
 	jmp REAL_MODE_START
 
+%include "fat12hdr.inc"
+%include "pm.inc"
+	
 [SECTION .real_mode_region]
 [BITS 16]
 
@@ -42,7 +45,7 @@ REAL_MODE_START:
 	mov al, 0x1
 	mov bh, 0x0
 	mov bl, 0xb
-	mov cx, lengthDebugMsg0
+	mov cx, offsetDebugMsg0
 	mov dh, 0x0
 	mov dl, 0x0
 	mov bp, debugMsg0
@@ -75,6 +78,14 @@ ReadMemeInfoDone:
 	;MEMORY INFO must be set up before goto PROTECTION
 	;MODE
 
+;----------------------------------   Load Kernel File  --------------------------------------
+    ;since still use BIOS Int to get kernel file => stay in real mode
+    mov dh, 1
+    call DisplayString
+    
+    
+    ;after load kernel file, then enable protect mode
+;---------------------------------- Enable Protect Mode --------------------------------------
 	;load GDT Table
 	xor eax, eax
 	mov ax, ds               ; ds = ax = 0x9000
@@ -95,11 +106,12 @@ ReadMemeInfoDone:
 	;addressing is all done by IP or mem
 	;segment register is just an index of GDT
 	;=> the value in register/mem is the real physical address
-	;of code/data
+	;of code/data = 32 bit register addressing
 	jmp	dword selectorCode:(BaseOfLoaderPhyAddr + PROTECT_MDOE_START)
 
-;----------------------- End of Real Mode -------------------------------------------
-
+;----------------------------------------------------------------------------------------------
+;--------------------------------- End of Real Mode -------------------------------------------
+;----------------------------------------------------------------------------------------------
 %include "dataRing0Boot.inc"
 %include "gdt.inc"
 
@@ -116,10 +128,75 @@ ReadMemeInfoDone:
 PROTECT_MDOE_START:
 	mov ax, selectorData
 	mov ds, ax 
-
-	mov ax, seletorVideo
+    mov ss, ax
+    mov es, ax
+    mov fs, ax
+    
+	mov ax, selectorVideo
 	mov gs, ax
 
 	mov esp, TopOfStackRing0
 
 	call displayMemSegInfo
+	
+	jmp $
+
+%include "lib.inc"
+	
+displayMemSegInfo:
+	push esi        ; easy convention = push all regs will use localy and
+	push edi        ; pop before return
+	push ecx
+
+	mov esi, memSegInfoBuff ;offset to data segment
+	mov ecx, [memCR]
+
+.readGoOn:              ;read an entry which is 5 elementss
+	mov edx, 0x5
+	mov edi, memSegDesc ;memory address
+
+.1:
+	push dword [esi]    ;push 4 bytes on stack
+	call DisplayIntegar
+	pop  eax			;retrive initial address of segInfo buffer
+
+	stosd               ;store eax value to ES:DI
+						;copy values from buffer to var
+    add esi, 0x4		;move down one dword		
+	dec edx				;decrease the counter by 1
+	cmp edx, 0x0
+	jnz .1
+
+	call DisplayReturn  ;this ADR display done
+
+	cmp  dword [segType], 1 ; check this seg type
+	jne  .2 
+
+	mov eax, [segBaseAddrLo]
+	add eax, [segLenLo]
+	cmp eax, [memSize]
+	jb .2
+	mov [memSize], eax
+.2:
+	dec ecx
+	cmp ecx, 0
+	jne .readGoOn
+	;jmp .readGoOn
+
+Done:
+	call DisplayReturn
+
+	push ramSizeTitle
+	push dword [offsetLightCyan]
+	call DisplayStringProtectMode
+	add  esp, 8
+
+	push dword [memSize] ; convention
+	call DisplayIntegar
+	add  esp, 4
+
+	pop ecx
+	pop edi
+	pop esi
+ 
+	ret
