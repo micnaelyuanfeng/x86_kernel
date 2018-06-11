@@ -1,5 +1,4 @@
 [SECTION .gdt]
-[BITS 32]
 GDT_TABLE_START:
 
 GDT_DEFAULT:	Descriptor			0,			0,					0		
@@ -10,10 +9,10 @@ GDT_VIDEO:		Descriptor	  		0xB8000,    0xFFFF,          	DA_DRW|DA_DPL3 ;Data Se
 
 selectorCode		equ		GDT_CODE_SYS  - GDT_DEFAULT
 selectorData		equ     GDT_DATA_SYS  - GDT_DEFAULT
-selectorVideo       equ     GDT_VIDEO     - GDT_VIDEO   + SA_RPL3
+selectorVideo       equ     GDT_VIDEO     - GDT_DEFAULT   + SA_RPL3
 
 gdtLen			equ		$ - GDT_TABLE_START
 gdtPtr			dw		gdtLen - 1 ;size
-				dd      BaseOfLoaderPhyAddr + GDT_TABLE_START
+				dd      BaseOfLoaderPhyAddr + GDT_DEFAULT
 
 ;------------------------ GDT SECTION ---------------------------

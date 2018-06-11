@@ -1,14 +1,17 @@
 org 0x100
-
+ 
 BaseOfStack         	equ		0x100	;stack start
 BaseOfKernel			equ		0x8000
 OffsetOfKernel			equ		0x0
 BaseOfLoaderPhyAddr		equ     (0x9000 << 4)
+BaseOfKernelPhyAddr		equ     (0x8000 << 4)
+KernelEntryPhyAddr		equ		0x030400 
 
 	jmp LOADER_START
 
 %include "fat12hdr.inc"
 %include "pm.inc"
+%include "gdt.inc"
 
 [SECTION .real_mode_region]
 [BITS 16]
@@ -299,7 +302,7 @@ DisplayString:
 ;Data Part
 KernelFileName			db	"KERNEL  BIN", 0
 MessageLength			equ	9
-LoadMessage:			db	"Loading  "
+LoadMessage:			db	"Loading  " 
 Message1                db  "Ready.   "
 Message2                db  "No Kernel"
 
@@ -318,7 +321,6 @@ dwKernelSize			dd	0
 
 %include "lib.inc"
 %include "dataRing0Boot.inc"
-%include "gdt.inc"
 
 PROTECT_MDOE_START:
  
@@ -334,15 +336,18 @@ PROTECT_MDOE_START:
 	mov esp, TopOfStackRing0
 	
 	push memSegTitle
-	push dword [offsetLightCyan]
-	push 0x0
+	push dword [offsetColorCyan]
 	call DisplayStringProtectMode
+	add esp, 8
 
-	jmp $
+	call displayMemSegInfo
 
-	;call displayMemSegInfo
+	call DisplayReturn
 	
-	;jmp $
+	call MigrateKernel
+
+	jmp dword selectorCode:KernelEntryPhyAddr
+	jmp $
 
 displayMemSegInfo:
 	push esi        ; easy convention = push all regs will use localy and
@@ -386,9 +391,9 @@ displayMemSegInfo:
 
 Done:
 	call DisplayReturn
-
-	push ramSizeTitle
-	push dword [offsetLightCyan]
+ 
+	push ramSizeTitle 
+	push dword [offsetColorCyan] 
 	call DisplayStringProtectMode
 	add  esp, 8
 
@@ -402,3 +407,39 @@ Done:
  
 	ret
 
+MigrateKernel:
+	push esi
+	push ecx
+	push eax
+ 
+	xor esi, esi
+	mov cx, word [BaseOfKernelPhyAddr + 0x2c] ;
+	movzx ecx, cx
+
+	mov esi, [BaseOfKernelPhyAddr + 0x1c]
+	add esi, BaseOfKernelPhyAddr
+
+Migratestart:
+	mov eax, [esi + 0]
+	cmp eax, 0x0
+	jz  MigrationDone
+
+	push dword [esi + 0x10]
+	mov  eax, [esi + 0x4]
+
+	add  eax, BaseOfKernelPhyAddr
+	push eax
+	push dword [esi + 0x8]
+	call MemCopy
+	add esp, 0xC
+
+MigrationDone:
+	add esi, 0x20
+	dec ecx
+	jnz Migratestart
+
+	pop eax
+	pop ecx
+	pop esi
+
+	ret

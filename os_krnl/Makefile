@@ -7,7 +7,7 @@ KERN_SRC := kernel.asm
 
 BOOT_BIN := $(subst .asm,.bin, $(BOOT_SRC))
 LOAD_BIN := $(subst .asm,.bin, $(LOAD_SRC))
-KERN_BIN := $(subst .asm,.bin, $(KERN_SRC))
+KERN_BIN := $(subst .asm,.o, $(KERN_SRC))
 
 DISK     := a.img
 
@@ -26,7 +26,8 @@ $(LOAD_BIN): $(LOAD_SRC)
 
 $(KERN_BIN): $(KERN_SRC)
 	nasm -f elf32 $< -o $@
-
+	#ld -Ttext 0x30400 -m elf_i386 kernel.o -o kernel.bin
+	ld -T linker.ld -m elf_i386 kernel.o -o kernel.bin
 install:
 	dd if=boot.bin of=$(DISK) bs=512 count=1 conv=notrunc
 	sudo mount a.img -o loop /mnt/floppy
@@ -40,10 +41,7 @@ uninstall:
 	sudo umount /mnt/floppy
 
 remove:
-	rm *.o 
-	rm *.img
 	rm *.bin
-	rm *.elf
-
+	rm *.o
 dump:
 	objdump -D loader.bin

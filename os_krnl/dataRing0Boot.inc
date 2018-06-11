@@ -43,14 +43,17 @@ offsetDebugMsg0             equ     BaseOfLoaderPhyAddr + $ ;should not use seg 
 degbugMsg1                  db      "In Protect Mode", 0
 offsetDebugMsg1             equ     BaseOfLoaderPhyAddr + $
 
+debugMsg2                   db      "Copying Kernel File", 0xA, 0
+offsetDebugMsg2             equ     BaseOfLoaderPhyAddr + debugMsg2
+
 colorCyan                   db      0x3
 offsetColorCyan             equ     BaseOfLoaderPhyAddr + $
 
 colorLightCyan              db      0xB
-offsetLightCyan             db      BaseOfLoaderPhyAddr + $
+offsetLightCyan             equ     BaseOfLoaderPhyAddr + $
 
 colorLightBlue              db      0x9
-offsetLightBlue             db      BaseOfLoaderPhyAddr + $
+offsetLightBlue             equ     BaseOfLoaderPhyAddr + $
 
 ;Stack Ring0 Information
 [SECTION .stack_region_ring0]
