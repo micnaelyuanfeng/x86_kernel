@@ -27,7 +27,7 @@ $(LOAD_BIN): $(LOAD_SRC)
 $(KERN_BIN): $(KERN_SRC)
 	nasm -f elf32 $< -o $@
 	#ld -Ttext 0x30400 -m elf_i386 kernel.o -o kernel.bin
-	ld -T linker.ld -m elf_i386 kernel.o -o kernel.bin
+	ld -T linker.ld -m elf_i386 kernel.o start.o -o kernel.bin
 install:
 	dd if=boot.bin of=$(DISK) bs=512 count=1 conv=notrunc
 	sudo mount a.img -o loop /mnt/floppy
