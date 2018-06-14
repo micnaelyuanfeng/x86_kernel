@@ -4,14 +4,14 @@
 BOOT_SRC  := boot.asm
 LOAD_SRC  := loader.asm
 KERN_SRC  := kernel.asm
-UTIL_CSRC := start.c
+UTIL_CSRC := $(shell find . -name "*.c")
 UTIL_NSRC := utility.asm
 
 BOOT_BIN := $(subst .asm,.bin, $(BOOT_SRC))
 LOAD_BIN := $(subst .asm,.bin, $(LOAD_SRC))
 KERN_BIN := $(subst .asm,.o, $(KERN_SRC))
 
-UTILC_BIN := $(subst .c,.o, $(UTIL_CSRC))
+UTILC_BIN := $(patsubst %.c, %.o, $(UTIL_CSRC))
 UTILN_BIN := $(subst .asm,.o, $(UTIL_NSRC))
 
 
@@ -21,7 +21,7 @@ DISK     := a.img
 ##############################################
 #                  FLAGS                     #
 ##############################################
-CFLAG    = -m32 -fno-builtin
+CFLAG    = -m32 -fno-builtin -nostdinc -fno-stack-protector -I include
 
 
 .PHONY: all
