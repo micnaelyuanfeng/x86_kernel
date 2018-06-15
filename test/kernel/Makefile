@@ -1,10 +1,10 @@
 #############################################
 #                 MakeFile                  #
 #############################################
-KERN_SRC   := kernel.asm
-UTIL_CSRC  := start.c
+KERN_SRC   := $(shell find . -name "*.asm")
+UTIL_CSRC  := $(shell find . -name "*.c")
 
-KERN_BIN := $(subst .asm,.o, $(KERN_SRC))
+KERN_BIN  := $(patsubst %.asm, %.o, $(KERN_SRC))
 UTILC_BIN := $(patsubst %.c, %.o, $(UTIL_CSRC))
 
 ##############################################
@@ -17,11 +17,13 @@ CFLAG    = -m32 -fno-builtin
 ##############################################
 #  Compile BootLoader and Load Kernel Image  #
 ##############################################
-all: $(UTILC_BIN) $(KERN_BIN)
+all: $(UTILC_BIN) $(KERN_BIN) kernel_make
 
-$(UTILC_BIN): $(UTIL_CSRC)
+%.o:%.c
 	gcc $(CFLAG) $< -c -o $@	
 	
-$(KERN_BIN): $(KERN_SRC)
+%.o:%.asm
 	nasm -f elf32 $< -o $@
-	ld -T linker.ld -m elf_i386 kernel.o $(UTILC_BIN) -o kernel.bin
+
+kernel_make:
+	ld -T linker.ld -m elf_i386 $(KERN_BIN) $(UTILC_BIN) -o kernel.bin

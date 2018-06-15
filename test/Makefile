@@ -2,6 +2,7 @@
 #                 MakeFile                  #
 #############################################
 BOOTLOADER := bootloader
+KERNEL     := kernel
 
 DISK     := a.img
 
@@ -28,10 +29,10 @@ kernel_make:
 #  Install Bootloader and Load Kernel Image  #
 ##############################################
 install:
-	dd if=bootloader/boot.bin of=$(DISK) bs=512 count=1 conv=notrunc
+	dd if=$(BOOTLOADER)/boot.bin of=$(DISK) bs=512 count=1 conv=notrunc
 	sudo mount a.img -o loop /mnt/floppy
-	sudo cp bootloader/loader.bin /mnt/floppy
-	sudo cp kernel/kernel.bin /mnt/floppy
+	sudo cp $(BOOTLOADER)/loader.bin /mnt/floppy
+	sudo cp $(KERNEL)/kernel.bin /mnt/floppy
 	sudo umount /mnt/floppy
 
 	bochs -f bochsrc
