@@ -2,12 +2,6 @@
 #                 MakeFile                  #
 #############################################
 BOOTLOADER := bootloader
-KERN_SRC   := kernel.asm
-UTIL_CSRC  := start.c
-
-KERN_BIN := $(subst .asm,.o, $(KERN_SRC))
-
-UTILC_BIN := $(patsubst %.c, %.o, $(UTIL_CSRC))
 
 DISK     := a.img
 
