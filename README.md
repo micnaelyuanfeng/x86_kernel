@@ -1,9 +1,17 @@
 # x86_kernel
 
-Bootloader Implemented
+Bootloader := Implemented
+Loader     := Implemented
+GDT        := Implemented
+IDT        := Implemented
+8259A      := Implemented
 
 To do list:
-Loader = setup GDT, IDT, Page Table
+-> Spicous Interrupt Handler
+-> Process Creation
+-> Page Table 
+
+
 
 .S = can add preprocess in compilation 
 .s and .asm = .s and .asm are the same, there is no preprocess in compilation
