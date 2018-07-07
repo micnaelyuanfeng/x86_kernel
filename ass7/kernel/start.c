@@ -5,6 +5,9 @@
 #include "lib.h"
 #include "pm.h"
 #include "display.h"
+#include "vga.h"
+#include "keyboard.h"
+#include "timer.h"
  
 uint8_t gdtPtr[6];
     
@@ -53,14 +56,21 @@ void cstart()
 	*((uint32_t*)(&gdtPtr[2])) = (uint32_t)&gdt;
  
 	console_clear();
-	//printk_int(bios_mem_segs);
-	//printk("\n");
-	//printk_hex(bios_mem_num);
-	//printk("\n");
-	//mem_seg_desc_t* memPtr = (mem_seg_desc_t*)bios_mem_segs;
 
 	//printk_color(black, light_green, "This is test string\n");
 	mem_seg_desc_copy();
 
-	init_idt_table();
+	mem_seg_desc_display();
+
+	init_phy_memoey();
+
+ 	init_idt_table();
+
+	init_timer(30000);
+	
+	init_keyboard();
+	
+	//enable_int();
+
+	//draw_main();
 } 

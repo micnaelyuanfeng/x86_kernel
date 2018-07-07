@@ -23,7 +23,6 @@ LOADER_START:
 	mov ss, ax
 	mov sp, BaseOfStack
 
-
 ;-------------------- read memory segment information ---------------------------------------
 	xor ebx, ebx
 	xor eax, eax
@@ -169,6 +168,15 @@ LOAD_LOADER_GO_ON:
 LOADING_DONE:
 	mov  dh, 1
 	call DisplayString
+
+	;set VGA Mode
+	;has to be done before protect mode
+	;32 bit addressing and BIOS Int can
+	;not use, because of different addressing
+	;mode
+	mov al, 0x3
+	mov ah, 0x00 
+	int 0x10
 
 ;---------------------------------- Enable Protect Mode --------------------------------------
 	;load GDT Table
@@ -336,14 +344,14 @@ PROTECT_MDOE_START:
 
 	mov esp, TopOfStackRing0
 	
-	push memSegTitle
-	push dword [offsetColorCyan]
-	call DisplayStringProtectMode
-	add esp, 8
+	;push memSegTitle
+	;push dword [offsetColorCyan]
+	;call DisplayStringProtectMode
+	;add esp, 8
 
-	call displayMemSegInfo
+	;call displayMemSegInfo
 
-	call DisplayReturn
+	;call DisplayReturn
 	
 	call MigrateKernel
 

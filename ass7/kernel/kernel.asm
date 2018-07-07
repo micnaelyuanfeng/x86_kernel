@@ -25,7 +25,6 @@ _kstart:
 
 	sgdt [gdtPtr] 
 
-	call cstart 
 ;error note -> not defined memCpu
 ;           -> compile execced range of 16 bit mode	 
 ;		    -> data type cast
@@ -35,14 +34,17 @@ _kstart:
 
 	lgdt [gdtPtr]
 
-	call init_8259A
+	;call init_8259A
+
+	call cstart 
 
 	lidt [idtPtr]
 
+	sti
 	;call set_cursor;
 
-	mov ax, SECLETOR_KERNEL_VIDEO
-	mov gs, ax
+	;mov ax, SECLETOR_KERNEL_VIDEO
+	;mov gs, ax
 
 	;mov	ah, 0x0A				 
 	;mov	al, 'P'
@@ -52,8 +54,7 @@ _kstart:
 	;sti
 
 	;call intr_test
-	int 0x3
-	int 0x4
+	;int 0x10
 
 	;call intr_test
 
@@ -61,7 +62,7 @@ _kstart:
 	;mov	al, 'P'
 	;mov [BaseOfVideoPhyAddr + ((80 * 20 + 0) * 2)], ax
 	;mov [gs:((80 * 3 + 0) * 2)], ax
-
+	jmp $
 	jmp SECLETOR_KERNEL_CS:csinit
 
 csinit:

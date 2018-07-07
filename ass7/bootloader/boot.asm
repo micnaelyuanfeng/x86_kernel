@@ -45,6 +45,10 @@ Message2             	db     	"No Loader"
 BaseOfStack			 	equ    	0x7c00
 DeltaSectorNo        	equ    	17          ; sector offset to address loading area
 
+;video_mode              equ     0xff2
+;video_x_range           equ     0xff4
+;video_y_range           equ     0xff6
+;video_buffer            equ     0xff8
 ;                 
 ;                 |  Load Area            |
 ;                 ------------------------ sector x = dynamic and MAX = 14 = 33
@@ -77,6 +81,11 @@ RESET_FLOPPY:
 
 	mov  dh, 0
 	call DISPLAY_MESSAGE
+
+	;mov byte [video_mode], 8
+	;mov word [video_x_range], 320
+	;mov word [video_y_range], 200 
+	;mov dword [video_buffer], 0xa0000
 
  	xor ah, ah
  	xor dl, dl

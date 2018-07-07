@@ -76,5 +76,20 @@ DisplayString:
 	pop	ebp
 	ret
 
+GLOBAL WriteMem
+
+WriteMem:
+	push ecx
+	push eax
+
+	mov ecx, [esp + 4]
+	mov al,  [esp + 8]
+	mov [ecx], al
+
+	pop eax
+	push ecx
+
+	ret
+
 [SECTION .data]
 disp_pos			dd			0x0
