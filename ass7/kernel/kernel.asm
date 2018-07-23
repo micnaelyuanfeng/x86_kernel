@@ -62,6 +62,9 @@ _kstart:
 	;mov	al, 'P'
 	;mov [BaseOfVideoPhyAddr + ((80 * 20 + 0) * 2)], ax
 	;mov [gs:((80 * 3 + 0) * 2)], ax
+	
+	;Set up Paging Table
+	
 	jmp $
 	jmp SECLETOR_KERNEL_CS:csinit
 
@@ -77,6 +80,9 @@ csinit:
 	;mov [gs:((80 * 4 + 0) * 2)], ax
 
 	jmp $
+
+setup_page_table:
+	xor edx, edx
 	
 
 ;can have multiple global in one section
@@ -91,3 +97,8 @@ global bios_mem_segs
 
 bios_mem_segs			dd          0
 bios_mem_num			dd          0
+
+;page tab;e
+page_dir_base			equ         0x200000
+page_table_base         equ         0x201000
+page_coverage			equ         4096 << 10

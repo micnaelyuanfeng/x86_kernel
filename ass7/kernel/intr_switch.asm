@@ -31,7 +31,7 @@ isr_ctx_save:
 	mov ss, bx
 
 	popa
-	add esp, 0x8
+	add esp, 0x8        ;esp points to EIP for CPU to push back automatically
 	iret
 
 %macro ISR_NOERRCODE	1
@@ -123,7 +123,7 @@ irq_ctx_save:
 
 	popa
 	add esp, 0x8
-	iret
+	iretd
 
 %macro IRQ 2
 
