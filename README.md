@@ -1,11 +1,11 @@
 # x86_kernel
 
-Bootloader   := Implemented
-Loader       := Implemented
-GDT          := Implemented
-IDT          := Implemented
-8259A        := Implemented
-Keyboard     := Implemented
+Bootloader   := Implemented	
+Loader       := Implemented	
+GDT          := Implemented	
+IDT          := Implemented	
+8259A        := Implemented	
+Keyboard     := Implemented	
 
 
 To do list:
