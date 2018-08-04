@@ -1,16 +1,23 @@
 # x86_kernel
 
-Bootloader := Implemented
-Loader     := Implemented
-GDT        := Implemented
-IDT        := Implemented
-8259A      := Implemented
+Bootloader   := Implemented
+Loader       := Implemented
+GDT          := Implemented
+IDT          := Implemented
+8259A        := Implemented
+Keyboard     := Implemented
+
 
 To do list:
 -> Spicous Interrupt Handler
+-> Paging Table = Paging Enable
+-> Physical Memory Management = Malloc and Free
+-> Simple System Call
+
+Postpone list
 -> Process Creation
 -> Page Table 
-
+-> File System
 
 
 .S = can add preprocess in compilation 
