@@ -1,88 +1,239 @@
+#include "types.h"
+#include "display.h"
 #include "pmm.h"
 
+/*
+	Aussume largest allocated chunk size = 4KB
+	Any chunk > 4KB will be put in the last
+	list of the array
+*/
+list_entry_t* free_list[12];
 
-/************************************************
-	Free Block Combine Functions
-	-> both neighbours are allocated
-	-> next block is free = can be combined
-	-> prev block is free = can be combined
-	-> next and prev block are free and can be combined
-*************************************************/
-void* coalesce(void* this_block)
+void mm_init(void)
 {
-	uint32_t prev_block_allocated = GET_ALLOC(FTRP(PREV_BLKP(this_block)));
-	uint32_t next_block_allocated = GET_ALLOC(HDRP(NEXT_BLKP(this_block)));
-	uint32_t size                 = GET_SIZE(HDRP(this_block));
+	
+}
 
-	if(prev_block_allocated && next_block_allocated)
+void* mm_malloc(uint32_t size)
+{
+
+}
+
+void* mm_realloc(void* this_mem_ptr, uint32_t size)
+{
+	
+}
+
+void* mm_free(void* this_mem_ptr)
+{
+	
+}
+
+void* mm_coalesce(void* this_mem_ptr)
+{
+	
+}
+
+/*
+	This Function find the corresponding link list
+	for the input size
+*/
+void* mm_search_fit(uint32_t alloc_size)
+{
+	if(alloc_size == 0)
 	{
-		return this_block;
+		return NULL;
 	}
-	else if(prev_block_allocated && !next_block_allocated)
+	
+	uint32_t free_list_index   = list_hash(alloc_size);
+	uint8_t  list_index        = 0;
+	uint32_t block_size        = 0;
+	uint32_t remaining_size	   = 0;
+	
+	list_entry_t* list_head_ptr = NULL;
+	list_entry_t* traverse_ptr  = NULL;
+	list_entry_t* list_elem_ptr = NULL;
+	list_entry_t* remaining_ptr = NULL:
+	list_entry_t* alloc_ptr     = NULL;
+	
+	//Using First Fit Algo
+	for(list_index = free_list_index; list_index < 12; list_index++)
 	{
-		list_entry_t* next = (list_entry_t*)NEXT_BLKP(this_block);
-		list_del(next);
+		if(free_list[list_index] != NULL)
+		{
+			//Get List Head
+			list_elem_ptr = free_list[list_index];
+			
+			//Get Block Information
+			block_size = GET_SIZE(HDRP(list_elem_ptr));
+			
+			//Situation 1
+			if(block_size >= alloc_size && (block_size - alloc_size) >= MIN_SIZE)
+			{
+				list_del(list_elem_ptr);
+				remaining_size = block_size - alloc_size;
+				
+				alloc_ptr = (uint8_t*)list_elem_ptr + remaining_size;
+				
+				//Mark allocated chunck information
+				PUT(HDRP(alloc_ptr), PACK(alloc_size, 1));
+				PUT(FTRP(alloc_ptr), PACK(alloc_size, 1));
+				
+				//Mark leftover chunk information
+				PUT(HDRP(list_elem_ptr), PACK(remaining_size, 1));
+				PUT(FTRP(list_elem_ptr), PACK(remaining_size, 1));
+			
+				//Update the free list if remaining size is not zero
+				if(remaining_size > 0)
+				{
+					list_index    = list_hash(remaining_size);
+					list_head_ptr = free_list[list_index];
+
+					//if no posiition is NULL
+					if(list_head_ptr != NULL)
+					{
+						list_add_before();
+					}
+					else if(list_head_ptr == NULL)
+					{
+						free_list[list_index] = list_elem_ptr;
+						list_init(list_elem_ptr);
+					}
+					else
+					{
+						list_add(list_elem_ptr);
+					}
+					
+					return (void*)alloc_ptr;
+				}
+			}
+			else if(block_size >= alloc_size && (block_size - alloc_size) < MIN_SIZE)//Reamaining size is not enough to make a min_size
+			{
+				list_del(list_elem_ptr);
+				
+				return (void*)list_elem_ptr;
+			}
 		
-		size += GET_SIZE(HDRP(NEXT_BLKP(this_block)));
+			//if first fit does not work, then traverse
+			list_elem_ptr = list_elem_ptr->next;
 		
-		PUT(HDRP(this_block), PACK(size, 0));
-		PUT(FTRP(this_block), PACK(size, 0));
-		
-		return this_block;
+			for(; list_elem_ptr != NULL; list_elem_ptr = list_elem_ptr->next)
+			{
+				block_size = GET_SIZE(HDRP(list_elem_ptr));
+				
+				if(block_size >= alloc_size && (block_size - alloc_size) >= MIN_SIZE)
+				{
+					list_del(list_elem_ptr);
+					
+					left_size = block_size - alloc_size;
+					
+					alloc_ptr = (uint8_t*)list_elem_ptr + left_size;
+					
+					//Update Footer and Header
+					PUT(HDRP(alloc_ptr), PACK(alloc_size, 1));
+					PUT(FTRP(alloc_ptr), PACK(alloc_size, 1));
+					
+					PUT(HDRP(list_elem_ptr),  PACK(left_size, 0));
+					PUT(FTRP(list_elem_ptr),  PACK(left_size, 0));
+					
+					if(left_size > 0)
+					{
+						list_index      = list_hash(left_size);
+						list_head_ptr   = free_list[list_index];
+						
+						if(list_head_ptr != NULL)
+						{
+							list_add_before(list_head_ptr, list_elem_ptr);
+						}
+						else if(list_head_ptr == NULL;)
+						{
+							free_list[list_index] = list_elem_ptr;
+							list_init(list_elem_ptr);
+						}
+						else
+						{
+							list_add(list_elem_ptr);
+						}
+						
+						return (void*)alloc_ptr;
+					}
+				}
+				else
+				{
+					list_del(list_elem_ptr);
+					
+					return (void*)list_elem_ptr;
+				}
+			}
+		}
 	}
-	else if(!prev_block_allocated && next_block_allocated)
+}
+
+void  mm_mark_used(void* this_chunck, uint32_t alloc_size)
+{
+	uint32_t block_size = GET_SIZE(HDRP(this_chunck));
+	
+	PUT(HDRP(this_chunck), PACK(block_size, 1));
+    PUT(FTRP(this_chunck), PACK(block_size, 1));
+}	
+
+void mm_free(void* this_chunk)
+{
+	if(this_chunck == NULL)
 	{
-		list_entry_t* prev = (list_entry_t*)PREV_BLKP(this_block);
-		list_del(prev);
-		
-		size += GET_SIZE(HDRP(PREV_BLKP)(this_block)));
-		
-		PUT(FTRP(this_block), PACK(size, 0));
-		PUT(HDRP(PREV_BLKP(this_block)), PACK(size, 0));
-		
-		return (PREV_BLKP(this_block));
+		return;
+	}
+	
+	uint32_t size = GET_SIZE(HDRP(this_chunck));
+	
+	PUT(HDRP(this_chunck), PACK(size,0));
+    PUT(FTRP(this_chunck), PACK(size,0));
+	
+	//list_entry_t* 
+}
+
+void* mm_malloc(uint32_t size)
+{
+	uint32_t alloc_size  = 0;
+	uint32_t extend_size = 0;
+	uint8_t* alloc_ptr   = NULL;
+
+	if(size <= 0)
+	{
+		return NULL;
+	}
+	
+	if(size <= 512)
+	{
+		size = next_pow_of_2(size);
+	}
+	
+	if(size <= DSIZE)
+	{
+		alloc_size = DSIZE + OVERHEAD;
 	}
 	else
 	{
-		list_entry_t* next = (list_entry_t*)NEXT_BLKP(this_block);
-		list_entry_t* prev = (list_entry_t*)PREV_BLKP(this_block);
-		
-		size += GET_SIZE(HDRP(NEXT_BLKP(this_block)));
-		size += GET_SIZE(HDRP(PREV_BLKP)(this_block)));
-		
-		list_del(prev);
-		list_del(next);
-		
-		PUT(HDRP(PREV_BLKP(this_block)), PACK(size, 0));
-		PUT(HDRP(NEXT_BLKP(this_block)), PACK(size, 0));
-	
-		reuturn (PREV_BLKP(this_block));
+		alloc_size = DSIZE * ((size + (OVERHEAD) + (DSIZE-1))/ DSIZE);
 	}
-}
-
-void* extend_heap()
-{
-	uint8_t* block_ptr = NULL;
-	uint32_t size      = PAGE_SIZE;
 	
-	block_ptr = heap_stack[heap_index];
-	
-	PUT(HDRP(block_ptr), PAGE_SIZE(size, 0));
-	PUT(FTRP(block_ptr), PAGE_SIZE(size, 0));
-	
-	list_add(block_ptr);
-	
-	return (void*)block_ptr;
-}
-
-bool mm_init()
-{
-	//Initialize free list
-	for(uint8_t* i = 0; i < 12; i++)
+	if((alloc_ptr = find_fit(alloc_size)) != NULL)
 	{
-		free_list[i] = NULL;
+		mm_mark_used(alloc_ptr, alloc_size);
+		
+		return alloc_ptr;
 	}
 	
-	return 0;
+	extend_size = alloc_size;
+	
+	if((alloc_ptr = extend_heap(extend_size / WSIZE)) == NULL)
+	{
+		return NULL;
+	}
+	
+	mm_mark_used(alloc_ptr, alloc_size);
+	
+	return alloc_ptr;
+	
+	
 }
-
