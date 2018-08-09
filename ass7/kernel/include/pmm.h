@@ -30,21 +30,4 @@ struct block_info
 	uint32_t size      : 31;
 };
 
-struct list_entry 
-{
-	uint32_t          info; //first DWORD is info, only for info protection
-    struct list_entry *prev;
-    struct list_entry *next;
-};
-
-typedef struct list_entry list_entry_t;
-
-
-// Hyposize largest allocated chunk size is 4096 Bytes
-// Then 2^12, 12 free list for different size of chunks
-list_entry_t* free_list[12];
-
-//List Management Functions
-uint32 list_hash(uint32_t size);
-
 #endif
