@@ -1,33 +1,32 @@
-#ifndef _LIST_H_
-#define _LIST_H_
+#ifndef LIST_H_
+#define LIST_H_
 
-#define WORD_SIZE				sizeof(void*)
-#define DWORD_SIZE				(WORD_SIZE << 1)
-#define OVERHEAD				DWORD_SIZE
 
-#define MAX(x,y)
-
-struct list_entry_desc;
-
-typedef struct list_entry_desc
+/*************************************************************************
+ * Basic Constants and Macros
+ * You are not required to use these macros but may find them helpful.
+ *************************************************************************/
+struct list_entry 
 {
-	struct
-	{
-		uint32_t allocated	:	1;
-		uint32_t size       :	29;
-		uint32_t reserved   :   1;
-	}info;
+	uint32_t          info; //first DWORD is info, only for info protection
+    struct list_entry *prev;
+    struct list_entry *next;
+};
 
-	list_entry_t* p_prev;
-	list_entry_t* p_next;
-}list_entry_t;
+typedef struct list_entry list_entry_t;
 
-inline bool     list_add(void* this_element)__attribute__((always_inline));
-inline bool     list_remove(void* this_element)__attribute__((always_inline));
-inline bool     list_search(void* this_element)__attribute__((always_inline));
-inline uint32_t list_hash(uint32_t size);
 
-inline void     is_pow_of_2(uint32_t size)__attribute__((always_inline));
-inline uint32_t next_pow_of_2(uint32_t size)__attribute__((always_inline));
-inline void     find_fit(uint32_t size);
+// Hyposize largest allocated chunk size is 4096 Bytes
+// Then 2^12, 12 free list for different size of chunks
+list_entry_t* free_list[12];
+
+//list management functions
+inline void list_add(list_entry_t *elm) __attribute__((always_inline));
+inline void list_add_before(list_entry_t *listelm, list_entry_t *elm) __attribute__((always_inline));
+inline void list_del(list_entry_t *listelm) __attribute__((always_inline));
+inline uint32_t next_pow_of_2(uint32_t size) __attribute__((always_inline));
+inline uint32_t is_pow_of_2(uint32_t size) __attribute__((always_inline));
+inline uint8_t list_hash(uint32_t size) __attribute__((always_inline));
+
+
 #endif
