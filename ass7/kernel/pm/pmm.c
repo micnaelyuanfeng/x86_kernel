@@ -1,37 +1,130 @@
-#include "types.h"
-#include "display.h"
 #include "pmm.h"
 
-/*
-	Aussume largest allocated chunk size = 4KB
-	Any chunk > 4KB will be put in the last
-	list of the array
-*/
-list_entry_t* free_list[12];
 
-void mm_init(void)
+/************************************************
+	Free Block Combine Functions
+	-> both neighbours are allocated
+	-> next block is free = can be combined
+	-> prev block is free = can be combined
+	-> next and prev block are free and can be combined
+*************************************************/
+uint32_t stack_heap[MAX_NUM_PAGES]; //suport 20MB heap
+uint32_t heap_stack;
+
+extern uint32_t num_of_page;
+extern uint32_t pm_start_addr;
+extern uint32_t pm_end_addr;
+
+struct block_info
 {
+	uint32_t allocated : 1;
+	uint32_t size      : 31;
+};
+
+
+void* coalesce(void* this_block)
+{
+	uint32_t prev_block_allocated = GET_ALLOC(FTRP(PREV_BLKP(this_block)));
+	uint32_t next_block_allocated = GET_ALLOC(HDRP(NEXT_BLKP(this_block)));
+	uint32_t size                 = GET_SIZE(HDRP(this_block));
+
+	if(prev_block_allocated && next_block_allocated)
+	{
+		return this_block;
+	}
+	else if(prev_block_allocated && !next_block_allocated)
+	{
+		list_entry_t* next = (list_entry_t*)NEXT_BLKP(this_block);
+		list_del(next);
+		
+		size += GET_SIZE(HDRP(NEXT_BLKP(this_block)));
+		
+		PUT(HDRP(this_block), PACK(size, 0));
+		PUT(FTRP(this_block), PACK(size, 0));
+		
+		return this_block;
+	}
+	else if(!prev_block_allocated && next_block_allocated)
+	{
+		list_entry_t* prev = (list_entry_t*)PREV_BLKP(this_block);
+		list_del(prev);
+		
+		size += GET_SIZE(HDRP(PREV_BLKP)(this_block)));
+		
+		PUT(FTRP(this_block), PACK(size, 0));
+		PUT(HDRP(PREV_BLKP(this_block)), PACK(size, 0));
+		
+		return (PREV_BLKP(this_block));
+	}
+	else
+	{
+		list_entry_t* next = (list_entry_t*)NEXT_BLKP(this_block);
+		list_entry_t* prev = (list_entry_t*)PREV_BLKP(this_block);
+		
+		size += GET_SIZE(HDRP(NEXT_BLKP(this_block)));
+		size += GET_SIZE(HDRP(PREV_BLKP)(this_block)));
+		
+		list_del(prev);
+		list_del(next);
+		
+		PUT(HDRP(PREV_BLKP(this_block)), PACK(size, 0));
+		PUT(HDRP(NEXT_BLKP(this_block)), PACK(size, 0));
 	
+		reuturn (PREV_BLKP(this_block));
+	}
 }
 
-void* mm_malloc(uint32_t size)
+void* extend_heap()
 {
+	uint32_t* block_ptr = NULL;
+	uint32_t size      = PAGE_SIZE;
 
+	if(heap_stack == num_of_page)
+	{
+		return NULL;
+	}
+	else
+	{
+		block_ptr = (uint32_t*)stack_heap[heap_stack];
+	
+		PUT(HDRP(block_ptr), PAGE_SIZE(size, 0));
+		PUT(FTRP(block_ptr), PAGE_SIZE(size, 0));
+		
+		heap_stack++;
+		
+		list_add(block_ptr);
+			
+		return (void*)block_ptr;
+	}
 }
 
-void* mm_realloc(void* this_mem_ptr, uint32_t size)
+bool mm_init()
 {
+	heap_stack = 0;
 	
-}
+	//Initialize free list
+	for(uint8_t i = 0; i < 12; i++)
+	{
+		free_list[i] = NULL;
+	}
 
-void* mm_free(void* this_mem_ptr)
-{
+	for(uint8_t i = 0; i < MAX_NUM_PAGES; i++)
+	{
+		stack_heap[i] = -1;
+	}
+	//alignment is 4K page
+#define ALIGNMENT			4096
+	pm_start_addr = (pm_start_addr + (ALIGNMENT-1)) & ~(ALIGNMENT-1);
+	pm_end_addr   = pm_end_addr & ~(ALIGNMENT-1);
 	
-}
-
-void* mm_coalesce(void* this_mem_ptr)
-{
+	num_of_page   = (pm_end_addr - pm_start_addr) / ALIGNMENT;
 	
+	for(uint8_t i = 0; i < num_of_page; i++)
+	{
+		stack_heap[i] = pm_start_addr + i * (ALIGNMENT - 1);
+	}
+	
+	return 0;
 }
 
 /*
@@ -234,6 +327,6 @@ void* mm_malloc(uint32_t size)
 	mm_mark_used(alloc_ptr, alloc_size);
 	
 	return alloc_ptr;
-	
-	
+		
 }
+
