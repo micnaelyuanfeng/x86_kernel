@@ -104,9 +104,9 @@ void cstart()
 	//printk("allocate address: 0x%x\n", temp1);
 
 	//mm_free((void*)temp2);
-	//mm_free((void*)temp1);
-	//mm_free((void*)temp5);
-	//mm_free((void*)temp3);
+	mm_free((void*)temp1);
+	//mm_free((void*)temp2);
+	mm_free((void*)temp3);
 	//mm_free((void*)temp4);
 	//mm_free((void*)temp7);
 	//mm_free((void*)temp8);
@@ -118,20 +118,6 @@ void cstart()
 	//mm_free((void*)temp16);
 	//mm_free((void*)temp15);
 
-	for(uint32_t i = 0; i < NUM_OF_LIST; i++ )
-	{
-		if(free_list[i] != NULL)
-		{
-			list_entry_t* curr = free_list[i];
-
-			for(; curr != NULL; curr = curr->next)
-			{
-				printk_color(black, cyan, "Element Address: 0x%x -> ", curr);
-			}
-
-			printk("\n");
-		}
-	}
 	//free_list_dump();
 	//enable_int();
 	printk_color(black, red, "current heal stack: %d\n", heap_stack);

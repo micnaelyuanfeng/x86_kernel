@@ -25,47 +25,33 @@ list_entry_t* free_list[NUM_OF_LIST];
 
 void* coalesce(void* this_block)
 {
-	uint32_t prev_block_allocated = GET_ALLOC(FTRP(PREV_BLKP(this_block)));
-	uint32_t next_block_allocated = GET_ALLOC(HDRP(NEXT_BLKP(this_block)));
+	uint32_t prev_block_allocated = GET_ALLOC(NEXT_BLKP(HDRP(this_block)));
+	uint32_t next_block_allocated = GET_ALLOC(PREV_BLKP(HDRP(this_block)));
 	uint32_t size                 = GET_SIZE(HDRP(this_block));
 
-	printk("size: %d\n", size);
-	printk("size1: %d\n", GET_SIZE(FTRP(PREV_BLKP(this_block))));
-	printk("size2: %d\n", GET_SIZE(HDRP(NEXT_BLKP(this_block))));
-	printk("%d\n", prev_block_allocated);
-	printk("%d\n", next_block_allocated);
+	uint8_t fisrt_alloc           = ((struct block_info*)HDRP(this_block))->first;
+
+	PUT(HDRP(this_block), PACK(size, 0));
+    PUT(FTRP(HDRP(this_block)), PACK(size, 0));
+
+	//printk("this block size: %d\n", size);
+	//printk("next block size: %d 0x%x\n", GET_SIZE(NEXT_BLKP(HDRP(this_block))), NEXT_BLKP(HDRP(this_block)));
+	//printk("previous block size: %d 0x%x %d %d\n", GET_SIZE(PREV_BLKP(HDRP(this_block))), PREV_BLKP(HDRP(this_block)), ((struct block_info*)(PREV_BLKP(HDRP(this_block))))->first, ((struct block_info*)(PREV_BLKP(HDRP(this_block))))->allocated);
 
 	uint8_t  list_index           = -1;
 
-	if(!prev_block_allocated && !next_block_allocated)
+
+	if(prev_block_allocated && next_block_allocated)
 	{
-		printk("Colaesce hit 1\n");
+		//printk("Colaesce hit 1\n");
 
 		return this_block;
 	}
 	else if(prev_block_allocated && !next_block_allocated)
 	{
-		printk("Colaesce hit 2\n");
+		//printk("Colaesce hit 2\n");
 
-		list_entry_t* next          = (list_entry_t*)NEXT_BLKP(this_block);
-
-		uint32_t      next_blk_size = GET_SIZE(HDRP(next));
-
-		list_index                  = list_hash(next_blk_size); 
 		
-		list_del(next, list_index);
-		
-		size += GET_SIZE(HDRP(NEXT_BLKP(this_block)));
-		
-		PUT(HDRP(this_block), PACK(size, 0));
-		PUT(FTRP(this_block), PACK(size, 0));
-		
-		return this_block;
-	}
-	else if(!prev_block_allocated && next_block_allocated)
-	{
-		printk("Colaesce hit 3\n");
-
 		list_entry_t* prev = (list_entry_t*)PREV_BLKP(this_block);
 
 		uint32_t      prev_blk_size = GET_SIZE(HDRP(prev));
@@ -80,31 +66,88 @@ void* coalesce(void* this_block)
 		PUT(HDRP(PREV_BLKP(this_block)), PACK(size, 0));
 		
 		return (PREV_BLKP(this_block));
+
+	}
+	else if(!prev_block_allocated && next_block_allocated)
+	{
+		//printk("Colaesce hit 3\n");
+
+		if(fisrt_alloc != 1)
+		{
+			list_entry_t* next          = (list_entry_t*)NEXT_BLKP(this_block);
+
+			uint32_t      next_blk_size = GET_SIZE(HDRP(next));
+
+			list_index                  = list_hash(next_blk_size); 
+			
+			list_del(next, list_index);
+			
+			size += GET_SIZE(HDRP(NEXT_BLKP(this_block)));
+			
+			PUT(HDRP(this_block), PACK(size, 0));
+			PUT(FTRP(this_block), PACK(size, 0));
+			
+			return this_block;
+		}
+		else
+		{
+			//printk("This is the first page, do not combine\n");
+
+			return this_block;
+		}
+
 	}
 	else
 	{
-		printk("Colaesce hit 4\n");
+		//printk("Colaesce hit 4\n");
 
-		list_entry_t* next = (list_entry_t*)NEXT_BLKP(this_block);
-		list_entry_t* prev = (list_entry_t*)PREV_BLKP(this_block);
+		if(fisrt_alloc != 1)
+		{
+			list_entry_t* next = (list_entry_t*)NEXT_BLKP(this_block);
+			list_entry_t* prev = (list_entry_t*)PREV_BLKP(this_block);
+			
+			size += GET_SIZE(HDRP(NEXT_BLKP(this_block)));
+			size += GET_SIZE(HDRP(PREV_BLKP(this_block)));
+
+			uint32_t      next_blk_size = GET_SIZE(HDRP(next));
+			uint32_t      prev_blk_size = GET_SIZE(HDRP(prev));
+
+			list_index  = list_hash(prev_blk_size);
+			
+			list_del(prev, list_index);
+
+			list_index = list_hash(next_blk_size);
+			list_del(next, list_index);
+			
+			PUT(HDRP(PREV_BLKP(this_block)), PACK(size, 0));
+			PUT(HDRP(NEXT_BLKP(this_block)), PACK(size, 0));
 		
-		size += GET_SIZE(HDRP(NEXT_BLKP(this_block)));
-		size += GET_SIZE(HDRP(PREV_BLKP(this_block)));
+			return (PREV_BLKP(this_block));
+		}
+		else
+		{
+			//printk("This is first page, just combine previous\n");
 
-		uint32_t      next_blk_size = GET_SIZE(HDRP(next));
-		uint32_t      prev_blk_size = GET_SIZE(HDRP(prev));
+			list_entry_t* prev = (list_entry_t*)PREV_BLKP(this_block);
+			
+			//size += GET_SIZE(HDRP(NEXT_BLKP(this_block)));
+			size += GET_SIZE(HDRP(PREV_BLKP(this_block)));
 
-		list_index  = list_hash(prev_blk_size);
+			//uint32_t      next_blk_size = GET_SIZE(HDRP(next));
+			uint32_t      prev_blk_size = GET_SIZE(HDRP(prev));
+
+			list_index  = list_hash(prev_blk_size);
+			
+			list_del(prev, list_index);
+
+			//list_index = list_hash(next_blk_size);
+			//list_del(next, list_index);
+			
+			PUT(HDRP(PREV_BLKP(this_block)), PACK(size, 0));
+			//PUT(HDRP(NEXT_BLKP(this_block)), PACK(size, 0));
 		
-		list_del(prev, list_index);
-
-		list_index = list_hash(next_blk_size);
-		list_del(next, list_index);
-		
-		PUT(HDRP(PREV_BLKP(this_block)), PACK(size, 0));
-		PUT(HDRP(NEXT_BLKP(this_block)), PACK(size, 0));
-	
-		return (PREV_BLKP(this_block));
+			return (PREV_BLKP(this_block));
+		}
 	}
 }
 
@@ -117,19 +160,25 @@ void* extend_heap()
 
 	if(heap_stack == num_of_page)
 	{
-		printk("Return Null Pointer\n");
+		//printk("Return Null Pointer\n");
+		
 		return NULL;
 	}
 	else
 	{
-		printk("Return a Page\n");
+		//printk("Return a Page\n");
 
 		block_ptr = (uint32_t*)stack_heap[heap_stack];
 
 		block_ptr = (uint32_t*)((uint8_t*)block_ptr + DWSIZE);
 
+		struct block_info *this_block = (struct block_info*)HDRP(block_ptr);
+
 		PUT(HDRP(block_ptr), PACK(size, 0));
-		PUT(FTRP(block_ptr), PACK(size, 0));
+		PUT(FTRP(HDRP(block_ptr)), PACK(size, 0));
+
+		this_block->allocated = 1;
+		this_block->first     = 1;
 
 		((list_entry_t*)block_ptr)->next = NULL;
 		((list_entry_t*)block_ptr)->prev = NULL;
@@ -142,8 +191,10 @@ void* extend_heap()
 		
 		list_add((list_entry_t*)block_ptr, list_index);
 
-		printk("address is 0x%x %d\n", block_ptr, GET_SIZE(HDRP(block_ptr)));
-			
+		//printk("%d %d\n", ((struct block_info*)HDRP(block_ptr))->first, ((struct block_info*)HDRP(block_ptr))->allocated);
+		//printk("address is 0x%x %d\n", HDRP(block_ptr), GET_SIZE(HDRP(block_ptr)));
+		//printk("address is 0x%x %d\n", FTRP(HDRP(block_ptr)), GET_SIZE(FTRP(HDRP(block_ptr))));
+
 		return (void*)block_ptr;
 	}
 }
@@ -207,7 +258,7 @@ void* mm_search_fit(uint32_t alloc_size)
 
 		if(free_list[list_index] != NULL)
 		{
-			printk("First Hit list index: %d\n", list_index);
+			//printk("First Hit list index: %d\n", list_index);
 			//Get List Head
 			list_elem_ptr = free_list[list_index];
 			
@@ -217,32 +268,52 @@ void* mm_search_fit(uint32_t alloc_size)
 			uint32_t left_size = 0;
 			//Situation 1
 
-			printk("block size: %d\n", block_size);
+			//printk("block size: %d\n", block_size);
 			//printk("alloc size: %d\n", alloc_size);
 			
 			if(block_size >= alloc_size && (block_size - alloc_size) > MIN_SIZE)
 			{
-				//printk("situation 1\n");
+				printk("situation 1\n");
+				
+				struct block_info* this_block = (struct block_info*)HDRP(list_elem_ptr);
+				//printk("first: %d\n", this_block->first);
+				//printk("allocate: %d\n", this_block->allocated);
 
 				list_del(list_elem_ptr, list_index);
 
+				//printk("%d %d\n", ((struct block_info*)HDRP(list_elem_ptr))->first, ((struct block_info*)HDRP(list_elem_ptr))->allocated);
+				
 				remaining_size = block_size - alloc_size;
 				
-				alloc_ptr = (uint8_t*)list_elem_ptr + remaining_size;
+				alloc_ptr = (uint8_t*)HDRP(list_elem_ptr) + remaining_size;		
+				alloc_ptr = (void*)((uint8_t*)alloc_ptr + DWSIZE);
 
-				uint32_t* temp = (uint32_t*)alloc_ptr + 1;
-				alloc_ptr      = (list_entry_t*)temp;
-				
 				//Mark allocated chunck information
 				PUT(HDRP(alloc_ptr), PACK(alloc_size, 1));
-				PUT(FTRP(alloc_ptr), PACK(alloc_size, 1));
+				PUT(FTRP(HDRP(alloc_ptr)), PACK(alloc_size, 1));
+
+				if(((struct block_info*)HDRP(list_elem_ptr))->first     == 1 &&
+					((struct block_info*)HDRP(list_elem_ptr))->allocated == 1)
+				{
+					//printk("Update first page allocation\n");
+
+					this_block->allocated = 0; //new page from heap stack
+					this_block->first     = 0;
+					
+					this_block = (struct block_info*)HDRP(alloc_ptr);
+
+					this_block->first = 1;
+				}
 				
+				PUT(HDRP(list_elem_ptr), PACK(remaining_size, 0));
+				PUT(FTRP(HDRP(list_elem_ptr)), PACK(remaining_size, 0));
+
 				//Mark leftover chunk information
-				PUT(HDRP(list_elem_ptr), PACK(remaining_size, 1));
-				PUT(FTRP(list_elem_ptr), PACK(remaining_size, 1));
 			
 				//Update the free list if remaining size is not zero
-				if(remaining_size > 0)
+				//remaining size < 0 is impossible in this case
+				//current design does not allow > 4096 malloc
+				if(remaining_size >= 0)
 				{
 					//printk("List update\n");
 					//printk("Remaing size: %d\n", remaining_size);
@@ -265,20 +336,27 @@ void* mm_search_fit(uint32_t alloc_size)
 					{
 						list_add(list_elem_ptr, list_index);
 					}
-					
+			
+					//printk("allocate block size: %d Head Addr: 0x%x\n", GET_SIZE(HDRP(alloc_ptr)), HDRP(alloc_ptr));
+					//printk("allocate block size: %d Foot Addr: 0x%x\n", GET_SIZE(FTRP(HDRP(alloc_ptr))), FTRP(HDRP(alloc_ptr)));
+					//printk("remaining block size: %d Head Addr: 0x%x\n", GET_SIZE(HDRP(list_elem_ptr)), HDRP(list_elem_ptr));
+					//printk("remaining block size: %d Foot Addr: 0x%x\n", GET_SIZE(FTRP(HDRP(list_elem_ptr))), FTRP(HDRP(list_elem_ptr)));
+
+					//printk("This first: %d allocated: %d\n", ((struct block_info*)HDRP(alloc_ptr))->first, ((struct block_info*)HDRP(alloc_ptr))->allocated);
+
 					return (void*)alloc_ptr;
 				}
 			}
 			else if(block_size >= alloc_size && (block_size - alloc_size) <= MIN_SIZE)//Reamaining size is not enough to make a min_size
 			{
-				//printk("Situation 2\n");
+				printk("Situation 2\n");
 
 				list_del(list_elem_ptr, list_index);
 				
 				return (void*)list_elem_ptr;
 			}
 		
-			//printk("Situation 3\n");
+			printk("Situation 3\n");
 			//if first fit does not work, then traverse
 			list_elem_ptr = list_elem_ptr->next;
 		
@@ -288,17 +366,16 @@ void* mm_search_fit(uint32_t alloc_size)
 
 				//printk("Situation 3 in\n");
 				
-				if(block_size >= alloc_size && (block_size - alloc_size) >= MIN_SIZE)
+				if(block_size >= alloc_size && (block_size - alloc_size) > MIN_SIZE)
 				{
 					//printk("Situation 3 hit 1\n");
 					list_del(list_elem_ptr, list_index);
 					
 					left_size = block_size - alloc_size;
 					
-					alloc_ptr = (uint8_t*)list_elem_ptr + left_size;
+					alloc_ptr = (uint8_t*)HDRP(list_elem_ptr) + remaining_size;
+					alloc_ptr = (void*)((uint8_t*)alloc_ptr + DWSIZE);
 					
-					uint32_t* temp = (uint32_t*)alloc_ptr + 1;
-					alloc_ptr      = (list_entry_t*)temp;
 					//Update Footer and Header
 					PUT(HDRP(alloc_ptr), PACK(alloc_size, 1));
 					PUT(FTRP(alloc_ptr), PACK(alloc_size, 1));
@@ -306,7 +383,7 @@ void* mm_search_fit(uint32_t alloc_size)
 					PUT(HDRP(list_elem_ptr),  PACK(left_size, 0));
 					PUT(FTRP(list_elem_ptr),  PACK(left_size, 0));
 					
-					if(left_size > 0)
+					if(left_size >= 0)
 					{
 						list_index      = list_hash(left_size);
 						list_head_ptr   = free_list[list_index];
@@ -325,10 +402,13 @@ void* mm_search_fit(uint32_t alloc_size)
 							list_add(list_elem_ptr, list_index);
 						}
 						
+						//printk("block size: %d\n", GET_SIZE(HDRP(alloc_ptr)));
+						//printk("block size: %d\n", GET_SIZE(FTRP(alloc_ptr)));
+
 						return (void*)alloc_ptr;
 					}
 				}
-				else if(block_size >= alloc_size && (block_size - alloc_size) < MIN_SIZE)
+				else if(block_size >= alloc_size && (block_size - alloc_size) <= MIN_SIZE)
 				{
 					//printk("Situation 3 hit 2\n");
 
@@ -364,9 +444,6 @@ void mm_free(void* this_chunk)
 	
 	uint32_t size = GET_SIZE(HDRP(this_chunk));
 	
-	PUT(HDRP(this_chunk), PACK(size,0));
-    PUT(FTRP(this_chunk), PACK(size,0));
-
 	uint8_t list_index = list_hash(size);
 	
 	list_add((list_entry_t*)coalesce(this_chunk), list_index);

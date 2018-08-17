@@ -22,16 +22,17 @@ struct block_info;
 
 //Get Block Information From Header or Footer
 #define HDRP(bp)			((char *)(bp) - DWSIZE)
-#define FTRP(bp)			((char *)(bp) + GET_SIZE(HDRP(bp)))
+#define FTRP(bp)			((char *)(bp) + GET_SIZE(bp) - DWSIZE)
 
 //Get Block Ptr of Next block or Previous block 
-#define NEXT_BLKP(bp)		((char*)(bp) + GET_SIZE((char*)(bp)))
-#define PREV_BLKP(bp)   	((char*)(bp) + GET_SIZE((char*)(bp)))
+#define NEXT_BLKP(bp)		((char*)(bp) + GET_SIZE(bp))
+#define PREV_BLKP(bp)   	((char*)(bp) - GET_SIZE((char*)(bp) - DWSIZE))
 
 struct block_info
 {
+	uint32_t first     : 1;
 	uint32_t allocated : 1;
-	uint32_t size      : 31;
+	uint32_t size      : 30;
 };
 
 void* mm_malloc(uint32_t size);

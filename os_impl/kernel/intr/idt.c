@@ -94,6 +94,8 @@ void init_idt_table(void)
   idtPtr.base   = (uint32_t)idt_vectors;
   idtPtr.limit  = (uint16_t)(sizeof(idt_vectors) * NUM_OF_INT_HANDLER - 1);
 
+  printk("%d\n", ((char*)idt_vectors + 5 - (char*)idt_vectors));
+
   SET_IDT_GATE(idt_vectors, 0, (uint32_t)isr0, 0x08, 0x8E);
   SET_IDT_GATE(idt_vectors, 1, (uint32_t)isr1, 0x08, 0x8E);
   SET_IDT_GATE(idt_vectors, 2, (uint32_t)isr2, 0x08, 0x8E);

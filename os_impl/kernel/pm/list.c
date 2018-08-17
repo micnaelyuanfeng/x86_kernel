@@ -17,16 +17,16 @@ bool list_add(list_entry_t* this_element, uint8_t list_index)
 	
 	if(result)
 	{
-		printk("add to list index: %d\n", list_index);
+		//printk("add to list index: %d\n", list_index);
 
 		if(free_list[list_index] != NULL)
 		{
-			printk("Add to a list\n");
+			//printk("Add to a list\n");
 			result = list_add_before(free_list[list_index], this_element);
 		}
 		else
 		{
-			printk("Make a list\n");
+			//printk("Make a list\n");
 			free_list[list_index] = this_element;
 			
 			free_list[list_index]->prev = NULL;
