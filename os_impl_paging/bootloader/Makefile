@@ -7,7 +7,6 @@ LOAD_SRC := loader.asm
 BOOT_BIN := $(subst .asm,.bin, $(BOOT_SRC))
 LOAD_BIN := $(subst .asm,.bin, $(LOAD_SRC))
 
-
 .PHONY: all
 
 ##############################################
@@ -19,5 +18,5 @@ $(BOOT_BIN): $(BOOT_SRC)
 	nasm $< -o $@
 
 $(LOAD_BIN): $(LOAD_SRC)
-	nasm $< -o $@
+	nasm $(LOAD_SRC) -o $@
 

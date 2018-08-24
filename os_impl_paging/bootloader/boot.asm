@@ -104,7 +104,7 @@ SEARCH_LOADER_BIN_IN_DIR:
 	mov ax, [wSectorNo]
 	mov cl, 1
     
-    	call READ_FROM_MEMORY_A_SECTOR
+    call READ_FROM_MEMORY_A_SECTOR
 	;Load to buffer @ ES:BX and compare 
 	mov si, LoaderFileName
 	mov di, OffsetOfLoader

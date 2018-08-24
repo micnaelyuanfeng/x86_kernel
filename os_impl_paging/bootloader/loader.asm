@@ -1,7 +1,9 @@
 org 0x100
  
 BaseOfStack         	equ		0x100	;stack start
+OffsetOfLoader       	equ		0x100 
 BaseOfKernel			equ		0x8000
+BaseOfLoader		 	equ		0x9000
 OffsetOfKernel			equ		0x0
 BaseOfLoaderPhyAddr		equ     (0x9000 << 4)
 BaseOfKernelPhyAddr		equ     (0x8000 << 4)
@@ -337,7 +339,7 @@ PROTECT_MDOE_START:
 	mov ax, selectorData
 	mov ds, ax 
     mov ss, ax
-    mov es, ax
+    mov es, ax   ;update ES
     mov fs, ax
     
 	mov ax, selectorVideo
@@ -359,7 +361,20 @@ PROTECT_MDOE_START:
 	mov edx, memSegInfoBuff
 	mov ebx, dword [memCR]
 
-	jmp dword selectorCode:KernelEntryPhyAddr
+	call SetupTempPageTable
+
+	xor eax, eax
+	mov eax, PageDirBase
+	mov cr3, eax
+
+	xor eax, eax
+	mov eax, cr0
+	or  eax, 0x80000000
+	mov cr0, eax
+
+	jmp $
+
+	;jmp dword selectorCode:KernelEntryPhyAddr
 	;jmp $
 
 displayMemSegInfo:
@@ -507,3 +522,95 @@ MemCopy:
 	pop ebp
 
 	ret 
+
+;Cover loader in Virtual Address Space
+SetupTempPageTable:
+	push eax	  ; save
+	push edx
+	push ecx  
+	push ebx
+	push edi  
+	
+	xor  eax, eax ; clear
+	xor  ebx, ebx
+	xor  ecx, ecx
+	xor  edx, edx
+	xor  edi, edi
+
+	;mov  edx, BaseOfLoader 
+	;shl  edx, 4
+	;shr  edx, 22          ;get PDE index
+	;add  edx, PageDirBase ;PageTable[0xC0000000 >> 22]
+
+	;mov  edi, edx         ;set edi = PageTable[0xC00000000 >> 2]
+	;mov  ecx, 0x1         ; 1 PDE = 1024 PTE * 4K = 4M => Big enough to cover loader
+
+	;xor edx, edx          ; clear eax
+	;mov edx, PageTblBase | PG_P | PG_USS | PG_RWW
+	mov edi, PageDirBase
+	mov ebx, PageTblBase
+	mov ecx, 0x1
+
+.1:
+	mov edx, ebx
+	or  edx, PG_P | PG_USS | PG_RWW
+	
+	mov dword [es:edi], edx
+
+	add ebx, 4096
+	add edi, 0x4
+
+	loop   .1
+;########################################################
+	
+	mov edi, PageTblBase
+
+	xor edx, edx
+	xor ebx, ebx
+	
+	mov ebx, BaseOfLoader
+	shl ebx, 4
+	or  ebx, OffsetOfLoader
+
+	shr ebx, 12
+	and ebx, 0x3FF
+
+	add edi, ebx
+	
+	mov ebx, BaseOfLoader
+	shl ebx, 4
+	mov ecx, 1024
+
+.2: 
+	mov edx, ebx
+	shl edx, 12
+	and edx, 0xFFFFF000
+	or  edx, PG_P |PG_USS | PG_RWW
+
+	mov dword [es:edi], edx
+
+	add ebx, 4096
+	add edi, 0x4
+	
+	loop   .2
+
+	mov ebx, PageTblBase
+	add ebx, 4
+
+.4:
+	
+	push dword [ebx]
+	call DisplayIntegar
+	add esp, 4
+
+	add ebx, 4
+
+	loop .4
+
+	pop edi
+	pop ebx
+	pop ecx
+	pop edx
+	pop eax
+
+	ret

@@ -76,10 +76,6 @@ void cstart()
 	init_keyboard();
 
 	//init temp page table
-	for(uint32_t i = 0; i )
-	{
-
-	}
 
 	//set selector
 
